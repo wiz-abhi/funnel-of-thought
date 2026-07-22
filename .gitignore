@@ -35,6 +35,8 @@
 Thumbs.db
 __pycache__/
 blog/video/build/
+blog/video/frames/
+blog/video/segments/*.webm
 build/
 credentials.json
 desktop.ini

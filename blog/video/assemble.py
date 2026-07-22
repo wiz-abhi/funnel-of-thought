@@ -44,8 +44,8 @@ PLAN: dict[int, dict] = {
 }
 
 
-def run(cmd: list[str]) -> None:
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+def run(cmd: list[str], cwd: Path | None = None) -> None:
+    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
     if proc.returncode != 0:
         sys.exit(f"FAILED: {' '.join(cmd[:6])} …\n{proc.stderr[-1500:]}")
 
@@ -152,13 +152,19 @@ def main() -> None:
 
     srt = HERE / "captions.srt"
     if srt.exists():
-        style = ("FontName=Segoe UI,FontSize=22,PrimaryColour=&H00F4EEE8,"
+        # FontSize/MarginV are in the SRT->ASS default PlayRes space, not pixels.
+        # 17/10 lands the cue in the letterbox band under the terminal window;
+        # larger MarginV pushes it up over the CLI's own output panel.
+        style = ("FontName=Segoe UI,FontSize=17,PrimaryColour=&H00F4EEE8,"
                  "OutlineColour=&H00201710,BorderStyle=3,Outline=1,Shadow=0,"
-                 "MarginV=48,Alignment=2")
+                 "MarginV=10,Alignment=2")
+        # ffmpeg's subtitles filter splits options on ':', so a Windows drive
+        # letter ("C:/…") is misread as an option. Run from the file's own
+        # directory and pass a bare filename instead of escaping.
         run(["ffmpeg", "-y", "-i", str(withaudio),
-             "-vf", f"subtitles={srt.as_posix()}:force_style='{style}'",
+             "-vf", f"subtitles={srt.name}:force_style='{style}'",
              "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-             "-c:a", "copy", str(OUT)])
+             "-c:a", "copy", str(OUT)], cwd=HERE)
     else:
         shutil.copy(withaudio, OUT)
         print("NOTE: captions.srt absent — shipped without burned-in captions")
