@@ -27,6 +27,10 @@ from .otel_setup import AGENT_NAME, get_tracer
 DEFAULT_MODEL = "gemini-3.1-flash-lite"
 GEN_AI_SYSTEM = "gcp.gemini"
 
+# Hard ceiling on a single LLM call. A batch run must fail loudly rather than
+# hang: an unbounded call stalls the whole generator with no error and no span.
+LLM_TIMEOUT_SECONDS = 45.0
+
 
 @dataclass
 class LLMResult:
@@ -75,7 +79,19 @@ class LLMClient:
             )
         from langchain_google_genai import ChatGoogleGenerativeAI
 
-        return ChatGoogleGenerativeAI(model=self.model, google_api_key=key, temperature=0.2)
+        # timeout and max_retries are NOT optional here. Without them the
+        # underlying client can block forever on a stalled connection: a real
+        # run of this generator hung for 34 minutes mid-batch, having completed
+        # 64 of 120 runs, while the API itself was answering in 1.4s. The
+        # process looked alive and produced no error -- exactly the silent-hang
+        # failure mode this project exists to make visible.
+        return ChatGoogleGenerativeAI(
+            model=self.model,
+            google_api_key=key,
+            temperature=0.2,
+            timeout=LLM_TIMEOUT_SECONDS,
+            max_retries=2,
+        )
 
     def chat(self, prompt: str, *, step: str, operation: str = "chat") -> LLMResult:
         """One LLM call, wrapped in a GenAI-semconv span.
