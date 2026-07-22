@@ -1,0 +1,224 @@
+{
+  "title": "Funnel of Thought - reasoning contract conversion",
+  "description": "Per-step conversion of the agent's plan -> tool -> validate -> respond contract. Fed by `fot gauges`, which reads SigNoz trace-funnel analytics and re-emits them as OTLP gauges (fot.funnel.step.conversion / .step_conversion / .n). SigNoz's own funnel analytics are not metrics, so they cannot be charted or alerted on directly - this dashboard is what closes that gap.",
+  "tags": ["agents", "funnel-of-thought", "cognition", "as-code"],
+  "variables": {},
+  "layout": [
+    { "i": "fot-w1-validate-conv", "x": 0, "y": 0, "w": 6, "h": 8, "moved": false, "static": false },
+    { "i": "fot-w2-step-conv", "x": 6, "y": 0, "w": 6, "h": 8, "moved": false, "static": false },
+    { "i": "fot-w3-step-n", "x": 0, "y": 8, "w": 6, "h": 8, "moved": false, "static": false },
+    { "i": "fot-w4-ab-validate", "x": 6, "y": 8, "w": 6, "h": 8, "moved": false, "static": false }
+  ],
+  "widgets": [
+    {
+      "id": "fot-w1-validate-conv",
+      "title": "Validate-step conversion (cognition)",
+      "description": "Share of runs that reached `validate` in trace order, out of every run that entered the funnel. This is the headline number: it is the fraction of answers that were actually checked before being returned. The shipped alert fires when this drops below 90%.",
+      "panelTypes": "graph",
+      "isStacked": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "fillSpans": false,
+      "yAxisUnit": "percent",
+      "softMax": 100,
+      "softMin": 0,
+      "selectedLogFields": [],
+      "selectedTracesFields": [],
+      "timePreferance": "GLOBAL_TIME",
+      "query": {
+        "queryType": "builder",
+        "id": "fot-q1",
+        "promql": [{ "name": "A", "query": "", "legend": "", "disabled": false }],
+        "clickhouse_sql": [{ "name": "A", "legend": "", "disabled": false, "query": "" }],
+        "builder": {
+          "queryFormulas": [],
+          "queryData": [
+            {
+              "dataSource": "metrics",
+              "queryName": "A",
+              "expression": "A",
+              "disabled": false,
+              "stepInterval": 60,
+              "aggregations": [
+                {
+                  "metricName": "fot.funnel.step.conversion",
+                  "temporality": "unspecified",
+                  "timeAggregation": "avg",
+                  "spaceAggregation": "avg"
+                }
+              ],
+              "filter": { "expression": "funnel = 'cognition' AND step = 'validate'" },
+              "filters": { "items": [], "op": "AND" },
+              "groupBy": [],
+              "having": [],
+              "limit": null,
+              "orderBy": [],
+              "legend": "validate conversion",
+              "reduceTo": "avg",
+              "functions": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fot-w2-step-conv",
+      "title": "Conversion by step (cognition)",
+      "description": "Every step of the contract, as a percentage of the runs that entered the funnel. The gap between two adjacent lines is the drop-off at that step.",
+      "panelTypes": "graph",
+      "isStacked": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "fillSpans": false,
+      "yAxisUnit": "percent",
+      "softMax": 100,
+      "softMin": 0,
+      "selectedLogFields": [],
+      "selectedTracesFields": [],
+      "timePreferance": "GLOBAL_TIME",
+      "query": {
+        "queryType": "builder",
+        "id": "fot-q2",
+        "promql": [{ "name": "A", "query": "", "legend": "", "disabled": false }],
+        "clickhouse_sql": [{ "name": "A", "legend": "", "disabled": false, "query": "" }],
+        "builder": {
+          "queryFormulas": [],
+          "queryData": [
+            {
+              "dataSource": "metrics",
+              "queryName": "A",
+              "expression": "A",
+              "disabled": false,
+              "stepInterval": 60,
+              "aggregations": [
+                {
+                  "metricName": "fot.funnel.step.conversion",
+                  "temporality": "unspecified",
+                  "timeAggregation": "avg",
+                  "spaceAggregation": "avg"
+                }
+              ],
+              "filter": { "expression": "funnel = 'cognition'" },
+              "filters": { "items": [], "op": "AND" },
+              "groupBy": [
+                { "key": "step", "dataType": "string", "type": "tag", "isColumn": false }
+              ],
+              "having": [],
+              "limit": null,
+              "orderBy": [],
+              "legend": "{{step}}",
+              "reduceTo": "avg",
+              "functions": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fot-w3-step-n",
+      "title": "Traces reaching each step (absolute n)",
+      "description": "Absolute trace counts per step. Percentages alone are misleading at low volume - 60% of 5 runs is not a finding. This panel is the denominator check for every other panel.",
+      "panelTypes": "graph",
+      "isStacked": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "fillSpans": false,
+      "yAxisUnit": "none",
+      "softMax": null,
+      "softMin": 0,
+      "selectedLogFields": [],
+      "selectedTracesFields": [],
+      "timePreferance": "GLOBAL_TIME",
+      "query": {
+        "queryType": "builder",
+        "id": "fot-q3",
+        "promql": [{ "name": "A", "query": "", "legend": "", "disabled": false }],
+        "clickhouse_sql": [{ "name": "A", "legend": "", "disabled": false, "query": "" }],
+        "builder": {
+          "queryFormulas": [],
+          "queryData": [
+            {
+              "dataSource": "metrics",
+              "queryName": "A",
+              "expression": "A",
+              "disabled": false,
+              "stepInterval": 60,
+              "aggregations": [
+                {
+                  "metricName": "fot.funnel.step.n",
+                  "temporality": "unspecified",
+                  "timeAggregation": "avg",
+                  "spaceAggregation": "avg"
+                }
+              ],
+              "filter": { "expression": "funnel = 'cognition'" },
+              "filters": { "items": [], "op": "AND" },
+              "groupBy": [
+                { "key": "step", "dataType": "string", "type": "tag", "isColumn": false }
+              ],
+              "having": [],
+              "limit": null,
+              "orderBy": [],
+              "legend": "{{step}} n",
+              "reduceTo": "avg",
+              "functions": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fot-w4-ab-validate",
+      "title": "Validate conversion: cognition vs control",
+      "description": "The A/B readout. Both arms run the same four-node contract; a divergence here is attributable to the change under test rather than to funnel definition drift.",
+      "panelTypes": "graph",
+      "isStacked": false,
+      "nullZeroValues": "zero",
+      "opacity": "1",
+      "fillSpans": false,
+      "yAxisUnit": "percent",
+      "softMax": 100,
+      "softMin": 0,
+      "selectedLogFields": [],
+      "selectedTracesFields": [],
+      "timePreferance": "GLOBAL_TIME",
+      "query": {
+        "queryType": "builder",
+        "id": "fot-q4",
+        "promql": [{ "name": "A", "query": "", "legend": "", "disabled": false }],
+        "clickhouse_sql": [{ "name": "A", "legend": "", "disabled": false, "query": "" }],
+        "builder": {
+          "queryFormulas": [],
+          "queryData": [
+            {
+              "dataSource": "metrics",
+              "queryName": "A",
+              "expression": "A",
+              "disabled": false,
+              "stepInterval": 60,
+              "aggregations": [
+                {
+                  "metricName": "fot.funnel.step.conversion",
+                  "temporality": "unspecified",
+                  "timeAggregation": "avg",
+                  "spaceAggregation": "avg"
+                }
+              ],
+              "filter": { "expression": "step = 'validate'" },
+              "filters": { "items": [], "op": "AND" },
+              "groupBy": [
+                { "key": "funnel", "dataType": "string", "type": "tag", "isColumn": false }
+              ],
+              "having": [],
+              "limit": null,
+              "orderBy": [],
+              "legend": "{{funnel}}",
+              "reduceTo": "avg",
+              "functions": []
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

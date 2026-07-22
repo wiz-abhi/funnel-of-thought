@@ -1,0 +1,55 @@
+{
+  "alert": "Reasoning contract: validate step below 90%",
+  "alertType": "METRIC_BASED_ALERT",
+  "ruleType": "threshold_rule",
+  "version": "v5",
+  "schemaVersion": "v1",
+  "frequency": "1m",
+  "evalWindow": "5m",
+  "disabled": false,
+  "source": "funnel-of-thought/alerts/validate-dropoff.json",
+  "preferredChannels": ["fot-local-webhook"],
+  "labels": {
+    "severity": "critical",
+    "funnel": "cognition",
+    "step": "validate",
+    "owner": "funnel-of-thought"
+  },
+  "annotations": {
+    "summary": "Agent is answering without validating: validate-step conversion is below 90%.",
+    "description": "fot.funnel.step.conversion{funnel=cognition,step=validate} is the share of agent runs that reached the `validate` node in trace order, out of every run that entered the contract. Below 90% means more than one run in ten produced an answer that was never checked against its tool output.\n\nThreshold rationale: 90% is a fixed, justified service level, not a rolling baseline. A rolling baseline would quietly ratify a regression - if the agent slowly stops validating, the baseline follows it down and the alert never fires. The contract is either honoured or it is not, so the threshold is absolute. (SigNoz anomaly detection is also license-gated, so a baseline rule is not portable.)\n\nThis metric is published by `fot gauges`, which reads SigNoz trace-funnel analytics and re-emits them as OTLP gauges; funnel analytics are not otherwise alertable.\n\nTriage: run `fot show cognition` for the drop-off, then `fot counter-proof cognition` to confirm the loss is genuine ordering failure and not a naive counting artefact."
+  },
+  "condition": {
+    "op": "2",
+    "target": 90,
+    "matchType": "1",
+    "targetUnit": "percent",
+    "selectedQueryName": "A",
+    "compositeQuery": {
+      "queryType": "builder",
+      "panelType": "graph",
+      "queries": [
+        {
+          "type": "builder_query",
+          "spec": {
+            "name": "A",
+            "signal": "metrics",
+            "disabled": false,
+            "stepInterval": "60s",
+            "aggregations": [
+              {
+                "metricName": "fot.funnel.step.conversion",
+                "temporality": "unspecified",
+                "timeAggregation": "avg",
+                "spaceAggregation": "avg"
+              }
+            ],
+            "filter": { "expression": "funnel = 'cognition' AND step = 'validate'" },
+            "groupBy": [],
+            "legend": "validate conversion"
+          }
+        }
+      ]
+    }
+  }
+}
