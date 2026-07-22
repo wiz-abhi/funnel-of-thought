@@ -115,20 +115,43 @@ FROM traces
 - Admin/editor JWT required for writes; a read-only service-account key gets `403 "only editors/admins can access this resource"` on create.
 - **Two distinct causes** of the NaN-500 that tooling must distinguish: (a) the step matches no spans at all, and (b) the step matches spans but never satisfies strict ordering — including the same-clock-tick case above.
 
-## 🔑 OPEN ITEM — all data so far is stub-mode (no API key on this machine)
+## ✅ HEADLINE NUMBERS — measured on real Gemini-backed traces (2026-07-22)
 
-`GEMINI_API_KEY` is **not set in any scope** (Process/User/Machine — checked 2026-07-22), and neither are `GOOGLE_API_KEY`, `CEREBRAS_API_KEY`, or `OPENAI_API_KEY`. The key that worked during the warm-up appears to have been rotated since.
+The figures above were established on stubbed traces. They were then reproduced on **124 live runs** against `gemini-3.1-flash-lite` (window 04:51–05:58 UTC; all stub data predates it by ~10 hours, so the window is uncontaminated). The live numbers are cleaner than the stubbed ones:
 
-Consequence: every trace currently in SigNoz under `fot-agent` came from `--stub` mode. **The mechanism is unaffected** — a funnel computes over span names and timestamps and cannot tell a stubbed span from a real one, so every number in this document stands. What's affected is *provenance*: the blog cannot claim "I watched a real LLM agent" on stub data without lying, and the judging guide weights real hands-on experience heavily.
+```
+FUNNEL OF THOUGHT · cognition        service fot-agent   window 2h
+  1  plan       n=125   100.0%
+  2  tool       n=125   100.0%
+  3  validate   n=80     64.0%  ◀  -45 traces
+  4  respond    n=80     64.0%
 
-**Action before the blog is written:** set a Gemini key and regenerate one batch —
-
-```bash
-export GEMINI_API_KEY=...              # free tier is sufficient
-python -m agent.generate --runs 150 --seed 42     # drop --stub
+COUNTER-PROOF
+  naive span counter    125/125   100.0%   "an agent.validate span exists"
+  ordered trace funnel   80/125    64.0%   "validate happened after tool"
+  gap                              36.0pp  45 traces
 ```
 
-~150 runs ≈ 300–600 model calls, comfortably inside the free tier's 1000 RPD at the default `--rpm 12` pacing. Until then, any claim of live-model data must say "simulated".
+**The counter says 100%. The funnel says 64%.** Every run emitted a validate span, so every presence-based metric — every `GROUP BY`, every "% of runs that validated" dashboard — reports perfect compliance. 45 of those runs validated *before* the tool result existed. Use these as the published figures.
+
+## 🔴 UNPLANNED INCIDENT — the generator hung silently for 34 minutes
+
+Worth writing up, because it is the project's own thesis happening to the project by accident.
+
+The first live batch stopped dead after 64 of 120 runs. Traces had been landing at a steady 4/min, then nothing for 34 minutes. The process stayed alive. No error, no exception, no partial span — from the outside it looked like slow work. Suspicion was rate limiting; a direct probe of the Gemini API during the stall returned **HTTP 200 in 1.4 s**, so the API was entirely healthy.
+
+Root cause: `ChatGoogleGenerativeAI` was constructed with no `timeout` and no `max_retries`, so `invoke()` could block indefinitely on a stalled connection. Fixed with a 45 s timeout and `max_retries=2`; the re-run completed 60/60 in 889 s with no stalls.
+
+This is the canonical agent failure mode — **an unbounded wait that emits nothing and looks healthy** — and it arrived unplanned, on real infrastructure, in the tooling built to expose exactly that. No process check would have caught it; the funnel would have shown entries flatlining.
+
+## 🔑 RESOLVED — API key (all earlier data was stub-mode)
+
+Earlier in the build, no LLM key existed on the machine, so every `fot-agent` trace came from `--stub` mode. A key was supplied on 2026-07-22 and 124 live runs were generated, which is where the headline numbers above come from.
+
+Two notes that still matter:
+
+- **`fot-agent` now contains both stub and live traces.** Stub runs are all at 2026-07-21 19:00 UTC; live runs are 2026-07-22 04:51–05:58 UTC. Any published figure must be scoped to the live window (`fot show cognition --since 2h` at the time of writing) or regenerated into a clean service name. Do not quote a 30-day window — it silently mixes the two.
+- **The mechanism never depended on this.** A funnel computes over span names and timestamps and cannot distinguish a stubbed span from a live one, so the stubbed findings held exactly. What live data buys is *provenance*, which the blog guide weights heavily — not correctness.
 
 ## Reference fixtures left in place
 
