@@ -43,9 +43,23 @@ os.environ["TERM"] = "xterm-256color"
 os.environ["COLUMNS"] = str(WIDTH)
 
 from rich.console import Console  # noqa: E402
+from rich.terminal_theme import SVG_EXPORT_THEME, TerminalTheme  # noqa: E402
 from typer.testing import CliRunner  # noqa: E402
 
 import fot.render as render  # noqa: E402
+
+# The bar labels are styled "bold black on <bar colour>". rich's SVG theme maps
+# ANSI black to #4b4e55, which on a green bar is barely readable -- a real
+# terminal renders it near-#000. Drop black to true black and leave every other
+# slot untouched, so the export matches what the terminal actually shows.
+_ANSI = [SVG_EXPORT_THEME.ansi_colors[i] for i in range(16)]
+_ANSI[0] = (0, 0, 0)
+EXPORT_THEME = TerminalTheme(
+    tuple(SVG_EXPORT_THEME.background_color),
+    tuple(SVG_EXPORT_THEME.foreground_color),
+    [tuple(c) for c in _ANSI[:8]],
+    [tuple(c) for c in _ANSI[8:]],
+)
 
 
 def recording_console() -> Console:
@@ -85,7 +99,7 @@ def capture(argv: list[str], out: Path, title: str) -> None:
             f"stdout: {result.stdout[:500]}\ncaptured: {text[:500]}"
         )
 
-    rec.save_svg(str(out), title=title)
+    rec.save_svg(str(out), title=title, theme=EXPORT_THEME)
     # Echo to the real terminal so the operator can eyeball the numbers.
     print(f"\n=== {out.name} :: fot {' '.join(argv)} ===")
     print(text)

@@ -25,7 +25,7 @@ We trust agents to honour that order and then essentially never check. Traces sh
 
 That question needs a primitive most observability tools don't expose — a **funnel**. Langfuse, LangSmith, Phoenix and Braintrust all give you traces and evals; none of them ships step-conversion as a first-class thing you can point at a trace. SigNoz does, and their AI page already suggests pointing it at agent pipelines. They got there first; this post is the working adapter.
 
-![The reasoning contract, honoured and violated](assets/diagram-01-contract.svg)
+![The reasoning contract, honoured and violated](assets/diagram-01-contract.png)
 
 ## Building it
 
@@ -60,7 +60,13 @@ The one rule that shapes everything: **steps match on exact span name.** No wild
 
 Here's 125 live runs against `gemini-3.1-flash-lite`:
 
-![fot show cognition](assets/01-funnel-show.svg)
+![fot show cognition — 125, 125, 80, 80 traces per step, cliff at validate](assets/01-funnel-show.png)
+<figcaption>The CLI. n is printed on every bar, because a percentage without a denominator isn't evidence.</figcaption>
+
+And the same funnel in SigNoz's own UI, which is where it actually lives:
+
+![SigNoz Funnels UI showing the cognition funnel at 64.00% conversion](assets/04-signoz-funnel.png)
+<figcaption>Conversion rate 64.00%. Total spans 125 → 125 → 80 → 80, with ↓36% flagged on step 3.</figcaption>
 
 **64%.** A third of the runs that reached `tool` never reached `validate` in trace order. The agent has a validation step and skips it, or runs it in the wrong place, in more than a third of its runs — and that is invisible to a trace view and invisible to any eval that only scores final answers.
 
@@ -68,7 +74,7 @@ Here's 125 live runs against `gemini-3.1-flash-lite`:
 
 Before funnels, the natural move is Query Builder: `GROUP BY span name → COUNT`. I ran it on exactly the same traces.
 
-![Counter-proof: presence vs sequence](assets/diagram-02-counter-vs-funnel.svg)
+![Counter-proof: presence vs sequence](assets/diagram-02-counter-vs-funnel.png)
 
 The counter reports **125 of 125 — 100.0%**. The funnel reports **80 of 125 — 64.0%**.
 
@@ -77,7 +83,15 @@ Both are correct. They answer different questions:
 - a counter asks **"did this span ever appear?"**
 - a funnel asks **"did it appear *after* the previous step, in the same trace?"**
 
+![fot counter-proof — counter 100.0%, funnel 64.0%, gap 36.0pp](assets/02-counter-proof.png)
+<figcaption>Both numbers, same window, same traces.</figcaption>
+
 The 45 traces in that gap all contain an `agent.validate` span. They just emitted it **before the tool result existed** — the agent confidently validated an answer that hadn't arrived yet. Every presence-based metric you have scores those runs as success.
+
+Open one and it's plainly visible in the waterfall:
+
+![Trace waterfall showing plan → validate → tool → respond](assets/07-trace-flamegraph.png)
+<figcaption>plan → <strong>validate</strong> → tool → respond. The red span is <code>agent.validate</code>, and it has already finished before <code>agent.tool</code> starts — it validated a tool result that did not exist yet. Nine spans, one error, and the run still returned an answer.</figcaption>
 
 That's the transferable idea, and it's worth stating sharply: a counter isn't a coarser answer, it's the **wrong question**. Aggregating per-span and dividing throws away the per-trace join, and no amount of extra `GROUP BY` columns gets it back — ordering is a property of the trace, not of the span.
 
@@ -91,7 +105,7 @@ Briskly, because you'll hit them too.
 
 **2. A step matching zero traces returns `HTTP 500: unsupported value: NaN`, not 0%.** I reached it by bumping the model `gemini-3.1 → 3.2`. The GenAI convention puts the model name *inside* the span name, so one logical step fragments across N literal names and the funnel matches nothing. Two specs, each correct, quietly incompatible. Filed as [#12143](https://github.com/SigNoz/signoz/issues/12143).
 
-![Span-name fragmentation](assets/diagram-03-fragmentation.svg)
+![Span-name fragmentation](assets/diagram-03-fragmentation.png)
 
 **3. `latency_type: "p50"` returns p99.** Measured on one funnel, varying only that field: p50 = `18.673343`, byte-identical to p99, while p90 = `17.96` and p95 = `18.01`. A median reporting higher than the p90 of the same data. Filed as [#12220](https://github.com/SigNoz/signoz/issues/12220) with a [PR](https://github.com/SigNoz/signoz/pull/12221).
 
@@ -115,9 +129,12 @@ The agent emits spans → SigNoz computes the funnel → **the agent calls `get_
 
 And it's *fast*, which is the part I didn't expect to care about. The read path has **no model in it** — it's REST over spans that already landed, plus arithmetic. Build-and-re-read is sub-second. An agent that *reasons* about telemetry takes ~40 seconds and costs money per investigation; this takes about a second and costs nothing, because it's an **instrument**, not an investigator. That's also why it can live in a dashboard panel and a threshold alert instead of being run on demand.
 
-![Architecture](assets/diagram-04-architecture.svg)
+![Architecture](assets/diagram-04-architecture.png)
 
-Mine is firing right now, at 64% against a 90% floor.
+That's also what makes it operational rather than a chart you visit. `fot gauges` re-emits each step's conversion as an OTLP gauge on a tick, so the funnel becomes something a dashboard panel and a threshold rule can read. Point a rule at the validate step with a floor of 90% and it goes red on its own:
+
+![SigNoz alert rule 'Reasoning contract: validate step below 90%' in Firing state](assets/06-alert-firing.png)
+<figcaption>Firing at 64% against a 90% floor. Labelled by funnel and step, so the page tells you which contract broke.</figcaption>
 
 ## The boundary, and one thing I got wrong
 
