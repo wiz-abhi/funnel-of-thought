@@ -321,6 +321,32 @@ def render_compare(
             Text(f"{vb:.1f}%", style=_conversion_style(vb)),
             Text(dtext, style="bold " + dstyle),
         )
+    width = out.measure(table).maximum
+
+    out.print(
+        Panel(
+            Group(
+                Text.assemble(
+                    ("COMPARE  ", "bold white"),
+                    (fa.name, "bold magenta"), ("  vs  ", "grey42"), (fb.name, "bold blue"),
+                    ("     window ", "grey62"), (window, "white"),
+                ),
+                Text.assemble(
+                    ("services ", "grey62"), (fa.service, "magenta"),
+                    ("  /  ", "grey42"), (fb.service, "blue"),
+                ),
+            ),
+            box=ROUNDED, border_style="cyan", padding=(0, 2), width=width,
+        )
+    )
+    if fa.labels != fb.labels:
+        out.print(
+            Text(
+                f"note: step shapes differ ({'/'.join(fa.labels)} vs {'/'.join(fb.labels)}); "
+                "comparing by position.",
+                style="yellow",
+            )
+        )
     out.print(table)
 
     e2e_a = cum_a[-1] if cum_a else 0.0
@@ -334,7 +360,7 @@ def render_compare(
     out.print(
         Panel(Text(verdict, style="bold white"), box=ROUNDED,
               border_style="bright_green" if gap >= 0 else "red",
-              title="[bold]verdict[/]", title_align="left", padding=(0, 2))
+              title="[bold]verdict[/]", title_align="left", padding=(0, 2), width=width)
     )
 
 
