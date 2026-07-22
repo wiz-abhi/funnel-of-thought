@@ -1,0 +1,61 @@
+{
+ "sections": [
+  {
+   "n": 1,
+   "file": "audio/section1.wav",
+   "duration": 23.198,
+   "target": 22.0,
+   "delta": 1.198
+  },
+  {
+   "n": 2,
+   "file": "audio/section2.wav",
+   "duration": 19.658,
+   "target": 22.0,
+   "delta": -2.342
+  },
+  {
+   "n": 3,
+   "file": "audio/section3.wav",
+   "duration": 23.502,
+   "target": 31.0,
+   "delta": -7.498
+  },
+  {
+   "n": 4,
+   "file": "audio/section4.wav",
+   "duration": 24.155,
+   "target": 22.0,
+   "delta": 2.155
+  },
+  {
+   "n": 5,
+   "file": "audio/section5.wav",
+   "duration": 30.911,
+   "target": 33.0,
+   "delta": -2.089
+  },
+  {
+   "n": 6,
+   "file": "audio/section6.wav",
+   "duration": 15.182,
+   "target": 17.0,
+   "delta": -1.818
+  },
+  {
+   "n": 7,
+   "file": "audio/section7.wav",
+   "duration": 18.393,
+   "target": 18.0,
+   "delta": 0.393
+  },
+  {
+   "n": 8,
+   "file": "audio/section8.wav",
+   "duration": 12.634,
+   "target": 13.0,
+   "delta": -0.366
+  }
+ ],
+ "total_duration": 167.633
+}

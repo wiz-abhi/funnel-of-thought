@@ -1,0 +1,195 @@
+WEBVTT
+
+1
+00:00:00.190 --> 00:00:04.957
+Every AI agent has a contract it's
+supposed to follow. Mine has four steps:
+
+2
+00:00:04.997 --> 00:00:09.572
+plan, call a tool, validate
+the result, then respond.
+
+3
+00:00:10.012 --> 00:00:14.432
+We trust agents to follow that order,
+and then we basically never check.
+
+4
+00:00:14.832 --> 00:00:19.212
+A trace shows you one run. An
+eval scores the final answer.
+
+5
+00:00:19.252 --> 00:00:23.122
+Neither one tells you how often the
+agent actually finished thinking.
+
+6
+00:00:23.388 --> 00:00:27.895
+So I measured it two ways, on the
+same hundred and twenty-five traces.
+
+7
+00:00:28.405 --> 00:00:33.005
+A normal span counter said my validate
+step ran in one hundred percent of runs.
+
+8
+00:00:33.530 --> 00:00:35.965
+A funnel said sixty-four percent.
+
+9
+00:00:36.420 --> 00:00:42.680
+Same traces. Both queries correct. Only
+one of them was asking the right question.
+
+10
+00:00:43.047 --> 00:00:47.053
+This is a funnel over the agent's
+reasoning, running against SigNoz.
+
+11
+00:00:47.613 --> 00:00:50.248
+A hundred and twenty-five runs start.
+
+12
+00:00:50.313 --> 00:00:53.253
+A hundred and twenty-five
+reach the tool call.
+
+13
+00:00:53.698 --> 00:00:58.118
+Then it falls off a cliff — only
+eighty reach validate, in order.
+
+14
+00:00:58.158 --> 00:00:59.988
+Sixty-four percent.
+
+15
+00:01:00.438 --> 00:01:03.123
+Notice the counts are
+printed on every bar.
+
+16
+00:01:03.183 --> 00:01:06.218
+A percentage without a
+denominator isn't evidence.
+
+17
+00:01:06.549 --> 00:01:09.424
+And this isn't my tool
+marking its own homework.
+
+18
+00:01:09.464 --> 00:01:12.374
+Here's the same funnel
+inside SigNoz itself.
+
+19
+00:01:12.854 --> 00:01:19.179
+Conversion rate: sixty-four percent.
+Total spans: one two five, one two five,
+
+20
+00:01:19.219 --> 00:01:23.634
+eighty, eighty. Down thirty-six
+percent on step three.
+
+21
+00:01:23.994 --> 00:01:27.079
+Trace Funnels are a SigNoz
+primitive — Langfuse,
+
+22
+00:01:27.119 --> 00:01:30.329
+LangSmith and Phoenix don't
+expose anything like it.
+
+23
+00:01:30.704 --> 00:01:33.734
+So why did the counter
+say one hundred percent?
+
+24
+00:01:34.184 --> 00:01:38.576
+Because a counter only asks: did this
+span exist anywhere in the trace.
+
+25
+00:01:38.726 --> 00:01:40.676
+It has no idea where.
+
+26
+00:01:41.006 --> 00:01:44.566
+A funnel asks: did it happen
+after the previous step.
+
+27
+00:01:45.026 --> 00:01:49.756
+Forty-five runs emitted a validate
+span — before the tool result existed.
+
+28
+00:01:49.816 --> 00:01:52.946
+The agent validated an answer
+that hadn't arrived yet.
+
+29
+00:01:53.376 --> 00:01:57.681
+Every one of those is a success to a
+counter, and a failure to a funnel.
+
+30
+00:01:57.721 --> 00:02:01.096
+Ordering is a property of
+the trace, not of the span.
+
+31
+00:02:01.615 --> 00:02:07.750
+Here's one of them. Plan, then validate
+— in red — and only then the tool call.
+
+32
+00:02:08.200 --> 00:02:12.790
+Validate finished before the tool it
+was checking even started. Nine spans,
+
+33
+00:02:12.830 --> 00:02:16.450
+one error, and the run still
+returned a confident answer.
+
+34
+00:02:16.797 --> 00:02:22.232
+Zero of SigNoz's forty-one MCP tools touch
+funnels, so I shipped the missing ones.
+
+35
+00:02:22.749 --> 00:02:26.444
+Now the agent calls get funnel analytics
+and reads its own conversion rate —
+
+36
+00:02:26.484 --> 00:02:29.014
+a loop that wasn't expressible before.
+
+37
+00:02:29.429 --> 00:02:34.884
+And the read path has no model in it.
+It's sub-second, and it costs nothing.
+
+38
+00:02:35.190 --> 00:02:36.805
+Which means it can just run:
+
+39
+00:02:36.845 --> 00:02:41.370
+a threshold rule that goes red when the
+agent stops validating before it answers.
+
+40
+00:02:41.800 --> 00:02:47.337
+Watch validate-step conversion. Alert
+on the cliff. That's the whole idea.

@@ -1,50 +1,48 @@
-# --- Python ---
-.venv/
-venv/
-env/
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-dist/
-build/
-.eggs/
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-.coverage
-htmlcov/
 
+!.env.example
+# --- Local run artifacts ---
+# --- OS / editor ---
+# --- Python ---
 # --- Secrets: never commit these ---
 # .env holds the Gemini key and the SigNoz JWT. .env.example is the committed
-# placeholder twin; if you ever find yourself wanting to `git add -f` any of
-# the below, stop.
-.env
-.env.*
-!.env.example
-.signoz-token
-token_dump.json
-*.token
-*.jwt
-secrets.json
-credentials.json
-
-# --- Local run artifacts ---
 # Captured funnel analytics payloads and generated trace batches. Regenerate
-# them with scripts/reproduce.sh rather than committing them.
-out/
-runs/
-*.log
-
-# --- OS / editor ---
-.DS_Store
-Thumbs.db
-desktop.ini
-.idea/
-.vscode/
-*.swp
-
 # NOTE: pours/ is intentionally NOT ignored. It is the deployment manifest set
 # `foundryctl forge` generates from casting.yaml, and committing it means a
-# judge can `docker compose -f pours/deployment/compose.yaml up` without
 # installing foundryctl at all. Same reason casting.yaml.lock is committed.
+# judge can `docker compose -f pours/deployment/compose.yaml up` without
+# placeholder twin; if you ever find yourself wanting to `git add -f` any of
+# the below, stop.
+# them with scripts/reproduce.sh rather than committing them.
+*$py.class
+*.egg-info/
+*.jwt
+*.log
+*.py[cod]
+*.swp
+*.token
+.DS_Store
+.coverage
+.eggs/
+.env
+.env.*
+.idea/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.signoz-token
+.venv/
+.vscode/
+Thumbs.db
+__pycache__/
+blog/video/build/
+build/
+credentials.json
+desktop.ini
+dist/
+env/
+htmlcov/
+out/
+runs/
+secrets.json
+token_dump.json
+venv/
