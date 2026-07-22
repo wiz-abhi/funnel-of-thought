@@ -1,0 +1,124 @@
+# Funnel of Thought — OUR containers only.
+#
+# SigNoz itself is NOT here. SigNoz is cast by Foundry from casting.yaml
+# (`foundryctl cast`), which creates the `signoz-network` bridge and brings up
+# the apiserver, ingester, ClickHouse, Keeper, Postgres and SigNoz's own MCP
+# server. This file adds the two pieces Foundry knows nothing about and joins
+# them to that same network as an EXTERNAL network, so there is exactly one
+# owner of the SigNoz lifecycle and it is Foundry.
+#
+# Order matters:
+#   1. foundryctl cast          # SigNoz comes up, signoz-network is created
+#   2. docker compose up ...    # this file attaches to it
+#
+# If step 2 errors with `network signoz-network declared as external, but
+# could not be found`, you skipped step 1.
+#
+# ---------------------------------------------------------------------------
+# Who talks to whom
+# ---------------------------------------------------------------------------
+#                      from the HOST              from INSIDE signoz-network
+#   SigNoz UI / API    http://localhost:8080      http://signoz-signoz-0:8080
+#   OTLP gRPC          localhost:4317             signoz-ingester:4317
+#   OTLP HTTP          http://localhost:4318      http://signoz-ingester:4318
+#   SigNoz MCP (41 tools) http://localhost:8000   http://signoz-mcp:8000
+#   OUR funnel MCP     stdio (not a port)         stdio
+#
+# Note the asymmetry in the last row and why it is deliberate: SigNoz's own MCP
+# server speaks streamable HTTP on 8000, ours speaks stdio. stdio is what
+# Claude Desktop / Claude Code / Cursor actually launch, it needs no port and
+# no auth layer of its own, and it makes the 60-second install a single JSON
+# block instead of a deployment. See the README, "Using the MCP server".
+#
+# ---------------------------------------------------------------------------
+# Usage
+# ---------------------------------------------------------------------------
+#   # Generate a batch of traces from the observed agent (the only LLM step):
+#   docker compose --profile batch up --build agent-batch
+#
+#   # Build the funnel MCP image so an MCP client can `docker run` it:
+#   docker compose --profile mcp build funnel-mcp
+#
+#   # Talk to the MCP server by hand (stdio, so keep stdin open):
+#   docker compose --profile mcp run --rm -i funnel-mcp
+#
+# Both services sit behind profiles on purpose: a bare `docker compose up`
+# should do nothing surprising. Neither of these is a long-running daemon —
+# one is a batch job that exits, the other is a stdio process owned by
+# whichever MCP client spawned it.
+
+name: funnel-of-thought
+
+networks:
+  # Created by `foundryctl cast`, NOT by this file. We only join it.
+  signoz-network:
+    external: true
+    name: signoz-network
+
+services:
+  # -------------------------------------------------------------------------
+  # The observed subject: a 4-node LangGraph agent (plan -> tool -> validate
+  # -> respond) under stock OpenTelemetry instrumentation, run as an offline
+  # batch to produce the traces the funnel is computed over.
+  #
+  # This is the ONLY container in the project that makes an LLM call, and it
+  # makes them once, offline. Everything downstream — the funnel, the CLI, the
+  # MCP server, the dashboard, the alert — is deterministic REST over spans
+  # that already landed.
+  # -------------------------------------------------------------------------
+  agent-batch:
+    profiles: ["batch"]
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    container_name: fot-agent-batch
+    networks: [signoz-network]
+    environment:
+      # In-network OTLP. From the host you would use localhost:4318 instead.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://signoz-ingester:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fot-agent}
+      # Two DIFFERENT models. This pair is what makes the OTel GenAI
+      # `{operation} {model}` span name fragment across the batch, which is
+      # the input to the counter-proof funnel.
+      FOT_MODEL_PRIMARY: ${FOT_MODEL_PRIMARY:-gemini-3.1-flash-lite}
+      FOT_MODEL_SWAP: ${FOT_MODEL_SWAP:-gemini-3.1-flash}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?set GEMINI_API_KEY in .env}
+      FOT_BATCH_SIZE: ${FOT_BATCH_SIZE:-150}
+      FOT_SEED: ${FOT_SEED:-1337}
+    env_file:
+      - path: .env
+        required: false
+    # A batch job. It runs, emits spans, flushes the exporter, exits 0.
+    restart: "no"
+
+  # -------------------------------------------------------------------------
+  # signoz-funnel-mcp: the four funnel tools that 0 of SigNoz's 41 shipped MCP
+  # tools provide — create_funnel, get_funnel_analytics,
+  # get_funnel_slow_traces, list_funnels.
+  #
+  # stdio transport. `run --rm -i` keeps stdin attached, which is what an MCP
+  # client does. Without -i the server sees EOF and exits immediately, which
+  # looks like a crash but is correct behaviour.
+  # -------------------------------------------------------------------------
+  funnel-mcp:
+    profiles: ["mcp"]
+    build:
+      context: .
+      dockerfile: signoz_funnel_mcp/Dockerfile
+    image: funnel-of-thought/signoz-funnel-mcp:0.1.0
+    container_name: fot-funnel-mcp
+    networks: [signoz-network]
+    environment:
+      SIGNOZ_URL: http://signoz-signoz-0:8080
+      # Funnel WRITES (/api/v1/trace-funnels/new, /steps/update) are gated on
+      # EditAccess, which an API key does not carry. This must be a login JWT
+      # from an admin/editor account. See scripts/setup.sh --token.
+      SIGNOZ_JWT: ${SIGNOZ_JWT:?set SIGNOZ_JWT in .env — funnel writes need an editor JWT, not an API key}
+      SIGNOZ_API_KEY: ${SIGNOZ_API_KEY:-}
+    env_file:
+      - path: .env
+        required: false
+    stdin_open: true
+    tty: false
+    restart: "no"

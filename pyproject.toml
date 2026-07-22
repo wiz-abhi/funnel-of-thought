@@ -1,0 +1,105 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "funnel-of-thought"
+version = "0.1.0"
+description = "A live conversion funnel over an AI agent's reasoning contract, plus the funnel MCP tools SigNoz doesn't ship."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [{ name = "Abhishek" }]
+keywords = ["signoz", "opentelemetry", "observability", "llm", "agents", "mcp", "trace-funnels"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: System :: Monitoring",
+]
+
+# Base install is deliberately THIN. It is everything the deterministic core
+# needs -- the SigNoz REST client, the funnel maths, the `fot` CLI -- and
+# nothing else. No LangGraph, no OTel SDK, no model SDK. A judge who only
+# wants to point the funnel tooling at their own already-instrumented agent
+# should not have to install a graph framework to do it.
+dependencies = [
+  "httpx>=0.27",
+  "pydantic>=2.7",
+  "python-dotenv>=1.0",
+  "typer>=0.12",
+  "rich>=13.7",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+# The OBSERVED agent + its batch trace generator. This is the only group that
+# pulls in an LLM SDK, and it is only needed to GENERATE data -- never to read
+# a funnel.
+agent = [
+  "langgraph>=0.2.30",
+  "langchain-core>=0.3",
+  "langchain-google-genai>=2.0",
+  "opentelemetry-sdk>=1.27",
+  "opentelemetry-exporter-otlp-proto-http>=1.27",
+  "opentelemetry-api>=1.27",
+  # Emits the stable `LangGraph Node <name>` spans the working funnel keys on,
+  # AND the OTel GenAI-convention `chat {model}` LLM child spans whose naming
+  # is what fragments under a model swap. Both halves of the story come from
+  # this one stock instrumentor -- we author no span names ourselves.
+  "openinference-instrumentation-langchain>=0.1.29",
+]
+
+# The MCP stdio server. Kept separate so `pipx install` / `uvx` style usage
+# stays light: an MCP client does not need LangGraph either.
+mcp = [
+  "mcp>=1.2",
+]
+
+# Metrics export: funnel analytics -> OTel gauges -> SigNoz dashboard + alert.
+metrics = [
+  "opentelemetry-sdk>=1.27",
+  "opentelemetry-exporter-otlp-proto-http>=1.27",
+]
+
+dev = [
+  "pytest>=8.2",
+  "pytest-asyncio>=0.23",
+  "respx>=0.21",
+  "ruff>=0.5",
+]
+
+# Everything. This is what scripts/setup.sh installs.
+all = [
+  "funnel-of-thought[agent,mcp,metrics,dev]",
+]
+
+[project.scripts]
+# The thin CLI overlay: `fot apply`, `fot show`, `fot compare`,
+# `fot counter-proof`, `fot gauges`.
+fot = "fot.cli:main"
+# The MCP stdio server, so an MCP client config can just say `signoz-funnel-mcp`.
+signoz-funnel-mcp = "signoz_funnel_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/wizabhi/funnel-of-thought"
+Issues = "https://github.com/wizabhi/funnel-of-thought/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["fot", "agent", "signoz_funnel_mcp"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# Integration tests hit a live SigNoz; unit tests never touch the network.
+markers = [
+  "integration: requires a running SigNoz at $SIGNOZ_URL",
+]

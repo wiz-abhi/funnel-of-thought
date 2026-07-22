@@ -1,0 +1,59 @@
+# Funnel of Thought -- reasoning contracts as code.
+#
+# A "reasoning contract" is the sequence of spans a well-behaved agent must emit,
+# in order, within a single trace:
+#
+#     plan -> tool -> validate -> respond
+#
+# Order is the whole point. A span that exists but fires in the wrong position is
+# a broken contract, and no `GROUP BY span_name COUNT` can see the difference --
+# see `fot counter-proof`.
+#
+# Every string supports ${VAR} and ${VAR:-default} env interpolation, so the same
+# file targets a laptop, CI, and prod without being forked.
+
+funnels:
+  # ---------------------------------------------------------------------------
+  # Treatment arm: the agent under test.
+  # ---------------------------------------------------------------------------
+  - name: cognition
+    description: >-
+      The four-node reasoning contract for the agent under test. Conversion at the
+      validate step is the metric that matters: it is the share of runs that
+      actually checked their tool output before answering.
+    steps:
+      - service: ${FOT_SERVICE:-fot-agent}
+        span: agent.plan
+        label: plan
+      - service: ${FOT_SERVICE:-fot-agent}
+        span: agent.tool
+        label: tool
+      - service: ${FOT_SERVICE:-fot-agent}
+        span: agent.validate
+        label: validate
+      - service: ${FOT_SERVICE:-fot-agent}
+        span: agent.respond
+        label: respond
+
+  # ---------------------------------------------------------------------------
+  # Control arm: an identical contract measured against the control service, so
+  # `fot compare cognition control` is a like-for-like A/B on the same four nodes.
+  # ---------------------------------------------------------------------------
+  - name: control
+    description: >-
+      Control arm. Same four nodes, same order, pointed at the control build of the
+      agent. Differences in validate-step conversion between this and `cognition`
+      are attributable to the change under test, not to funnel definition drift.
+    steps:
+      - service: ${FOT_CONTROL_SERVICE:-fot-spike2}
+        span: agent.plan
+        label: plan
+      - service: ${FOT_CONTROL_SERVICE:-fot-spike2}
+        span: agent.tool
+        label: tool
+      - service: ${FOT_CONTROL_SERVICE:-fot-spike2}
+        span: agent.validate
+        label: validate
+      - service: ${FOT_CONTROL_SERVICE:-fot-spike2}
+        span: agent.respond
+        label: respond

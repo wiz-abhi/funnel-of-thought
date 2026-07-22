@@ -1,0 +1,20 @@
+# This repo is authored on Windows and run by judges on Linux and macOS.
+# Shell scripts MUST check out with LF endings — a .sh file with CRLF fails on
+# Linux with the famously unhelpful `bad interpreter: /usr/bin/env bash^M`.
+* text=auto eol=lf
+
+*.sh        text eol=lf
+*.bash      text eol=lf
+Dockerfile  text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+
+# PowerShell is the one place CRLF is the native, correct choice.
+*.ps1       text eol=crlf
+
+# Binary assets: never normalise, never diff.
+*.png       binary
+*.jpg       binary
+*.gif       binary
+*.mp4       binary
+*.webm      binary

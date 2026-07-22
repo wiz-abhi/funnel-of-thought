@@ -1,0 +1,14 @@
+# Funnel of Thought -- observed agent
+# Pinned to the versions verified on 2026-07-22 (Python 3.11).
+
+langgraph==1.2.9
+langchain-core==1.5.0
+langchain-google-genai==4.3.0
+
+opentelemetry-api==1.44.0
+opentelemetry-sdk==1.44.0
+opentelemetry-exporter-otlp-proto-http==1.44.0
+
+# Optional: stock LangGraph auto-instrumentation (--auto-instrument).
+# Emits bare node-name spans alongside our explicit agent.* spans.
+openinference-instrumentation-langchain==0.1.67
