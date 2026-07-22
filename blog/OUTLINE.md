@@ -73,11 +73,10 @@ blog guide weights hardest.
   exact span name** (`service AND name`, ANDed with an optional per-step SQL
   clause). No wildcards. So key the funnel on names that are *identities* —
   the node spans — not names that are *descriptions*.
-- **The result, with n on every bar:** `56 → 47 → 25 → 25`.
-  **100% → 83.9% → 44.6%.** Overview `200`, `avg_duration 720.99ms`,
-  `latency 1079.61ms`.
+- **The result, with n on every bar:** `125 → 125 → 80 → 80`.
+  **100% → 100% → 64.0%.** Live Gemini window, 2026-07-22 04:51-05:58 UTC.
 
-Then interpret it, because the number is the point: **fewer than half the runs
+Then interpret it, because the number is the point: **a third of the runs never
 validated before answering, in order.** The agent has a validation step; it
 skips it or runs it late in most runs. That is invisible to a trace view and
 invisible to an eval that only scores final answers.
@@ -95,7 +94,7 @@ The counter-proof, and the most transferable idea in the post.
 
 Before funnels, the natural move is Query Builder: `GROUP BY span name → COUNT`.
 Run it on the same traces and `agent.validate` reports ~100%. The funnel says
-44.6%. Both queries are correct; they answer different questions.
+64.0%. Both queries are correct; they answer different questions.
 
 - A counter asks **"did this span ever appear?"**
 - A funnel asks **"did it appear *after* the previous step, in the same trace?"**
@@ -221,7 +220,7 @@ short enough that it cannot become the story.
 
 **If over budget, cut in this order:** the p50 pothole (beat 4, item 3) → the
 `avg_duration`/`latency` figures in beat 2 → the Phoenix/Datadog naming in the
-landing. **Never cut:** the `56 → 47 → 25 → 25` numbers, the counter-vs-funnel
+landing. **Never cut:** the `125 → 125 → 80 → 80` numbers, the counter-vs-funnel
 contrast, or the live regression demo.
 
 ---
@@ -230,13 +229,13 @@ contrast, or the live regression demo.
 
 In priority order — if only three survive the edit, they are the first three.
 
-1. **The money image:** naive counter (~100%) beside the ordered funnel (44.6%),
+1. **The money image:** naive counter (100.0%) beside the ordered funnel (64.0%),
    same traces, same window, **n printed on every bar**.
 2. **The live loop (video, ≤3 min):** inject the validation regression → the
    `validate` bar sinks → the alert fires. Leads the video, first 20 seconds.
 3. **Terminal capture:** the agent calling `get_funnel_analytics` through
    `signoz-funnel-mcp` and reading its own conversion rate.
-4. The corrected cliff in SigNoz's Trace Funnels UI (`56 → 47 → 25 → 25`).
+4. The corrected cliff in SigNoz's Trace Funnels UI (`125 → 125 → 80 → 80`).
 5. The dashboard-as-code panel — validate-conversion over time — plus the
    firing drop-off alert.
 6. The `500: unsupported value: NaN` response, verbatim. **One small image, in

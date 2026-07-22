@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 648" width="900" height="648" role="img" aria-label="OpenTelemetry GenAI span names embed the model name, so a funnel step keyed on an exact span name matches only one of several names and matches zero after a model version bump.">
+  <title>One logical step, N span names</title>
+  <defs>
+    <marker id="d3ArrowGreen" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4cc294"/>
+    </marker>
+    <marker id="d3ArrowGrey" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#5d7185"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="648" fill="#0f1720"/>
+
+  <g font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+
+    <!-- header -->
+    <text x="32" y="42" font-size="23" font-weight="600" fill="#e6edf3">Why the funnel breaks on spec-compliant agents</text>
+    <text x="32" y="68" font-size="14" fill="#93a4b5">The OpenTelemetry GenAI conventions name an LLM span <tspan font-family="ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace" fill="#b6c6d6">{operation} {model}</tspan> &#8212; the model is inside the name.</text>
+
+    <!-- ==================== BAND A : TODAY ==================== -->
+    <rect x="32" y="92" width="836" height="228" rx="10" fill="#16212e" stroke="#27384a" stroke-width="1"/>
+    <rect x="52" y="108" width="74" height="23" rx="11.5" fill="#1e2b3a" stroke="#35485d" stroke-width="1"/>
+    <text x="89" y="123.5" font-size="11.5" font-weight="700" letter-spacing="1.2" fill="#a8bccd" text-anchor="middle">TODAY</text>
+    <text x="140" y="124" font-size="13" fill="#8fa3b8">one agent, three LLM span names. The step matches exactly one of them.</text>
+
+    <!-- span name chips -->
+    <g font-family="ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace" font-size="12.5">
+      <rect x="64" y="152" width="256" height="34" rx="7" fill="#14251f" stroke="#4cc294" stroke-width="1.3"/>
+      <text x="80" y="173.5" fill="#cfe7dd">chat gemini-3.1-flash-lite</text>
+
+      <rect x="64" y="196" width="256" height="34" rx="7" fill="#131d28" stroke="#33465a" stroke-width="1" stroke-dasharray="5 3"/>
+      <text x="80" y="217.5" fill="#8296a8">chat gemini-3.1-flash</text>
+
+      <rect x="64" y="240" width="256" height="34" rx="7" fill="#131d28" stroke="#33465a" stroke-width="1" stroke-dasharray="5 3"/>
+      <text x="80" y="261.5" fill="#8296a8">chat gemini-3.2-flash-lite</text>
+    </g>
+
+    <!-- connectors -->
+    <path d="M320,169 L500,169 L500,184 L550,184" fill="none" stroke="#4cc294" stroke-width="1.8" marker-end="url(#d3ArrowGreen)"/>
+    <text x="400" y="162" font-size="11" font-weight="600" fill="#4cc294" text-anchor="middle">match</text>
+
+    <path d="M320,213 L470,213 L470,264 L550,264" fill="none" stroke="#5d7185" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#d3ArrowGrey)"/>
+    <path d="M320,257 L430,257 L430,280 L550,280" fill="none" stroke="#5d7185" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#d3ArrowGrey)"/>
+
+    <!-- funnel step box -->
+    <rect x="556" y="150" width="294" height="76" rx="9" fill="#101a25" stroke="#3a5470" stroke-width="1.3"/>
+    <text x="572" y="172" font-size="11" font-weight="700" letter-spacing="1.3" fill="#8fa3b8">FUNNEL STEP</text>
+    <text x="572" y="195" font-size="12.5" font-family="ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace" fill="#d6e2ee">name = chat gemini-3.1-flash-lite</text>
+    <text x="572" y="214" font-size="11.5" fill="#6f8398">exact string match &#8212; no wildcards</text>
+
+    <!-- unmatched bin -->
+    <rect x="556" y="246" width="294" height="52" rx="9" fill="#131d28" stroke="#33465a" stroke-width="1" stroke-dasharray="5 4"/>
+    <text x="572" y="269" font-size="12.5" font-weight="600" fill="#8fa3b8">unmatched</text>
+    <text x="572" y="288" font-size="11.5" fill="#6f8398">two span names sail past the step</text>
+
+    <!-- ==================== BAND B : AFTER A VERSION BUMP ==================== -->
+    <rect x="32" y="336" width="836" height="196" rx="10" fill="#16212e" stroke="#27384a" stroke-width="1"/>
+    <rect x="52" y="352" width="222" height="23" rx="11.5" fill="#2a1b16" stroke="#a3543a" stroke-width="1"/>
+    <text x="163" y="367.5" font-size="11.5" font-weight="700" letter-spacing="1.2" fill="#f0a07a" text-anchor="middle">AFTER A MODEL VERSION BUMP</text>
+    <text x="288" y="368" font-size="13" fill="#8fa3b8">traffic moves to 3.2 and the literal in the step matches nothing.</text>
+
+    <g font-family="ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace" font-size="12.5">
+      <rect x="64" y="392" width="256" height="32" rx="7" fill="#131d28" stroke="#33465a" stroke-width="1" stroke-dasharray="5 3"/>
+      <text x="80" y="412.5" fill="#8296a8">chat gemini-3.2-flash-lite</text>
+
+      <rect x="64" y="430" width="256" height="32" rx="7" fill="#131d28" stroke="#33465a" stroke-width="1" stroke-dasharray="5 3"/>
+      <text x="80" y="450.5" fill="#8296a8">chat gemini-3.2-flash</text>
+    </g>
+
+    <path d="M320,408 L392,408 L392,446 L320,446" fill="none" stroke="#5d7185" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <line x1="392" y1="427" x2="414" y2="427" stroke="#5d7185" stroke-width="1.5"/>
+    <circle cx="428" cy="427" r="13" fill="#2a1b16" stroke="#a3543a" stroke-width="1.4"/>
+    <path d="M423,422 L433,432 M433,422 L423,432" stroke="#e0714a" stroke-width="2" stroke-linecap="round"/>
+    <line x1="443" y1="427" x2="550" y2="427" stroke="#5d7185" stroke-width="1.5" stroke-dasharray="5 4"/>
+
+    <rect x="556" y="392" width="294" height="70" rx="9" fill="#101a25" stroke="#3a5470" stroke-width="1.3"/>
+    <text x="572" y="414" font-size="11" font-weight="700" letter-spacing="1.3" fill="#8fa3b8">FUNNEL STEP (unchanged)</text>
+    <text x="572" y="436" font-size="12.5" font-family="ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace" fill="#7d93a8">name = chat gemini-3.1-flash-lite</text>
+    <text x="572" y="453" font-size="12" font-weight="600" fill="#f0a07a">now matches 0 traces</text>
+
+    <!-- error strip -->
+    <rect x="64" y="474" width="786" height="42" rx="8" fill="#2a1b16" stroke="#a3543a" stroke-width="1"/>
+    <text x="82" y="500" font-size="13" fill="#cbb3a5">
+      <tspan>the analytics call returns </tspan><tspan font-family="ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace" font-weight="700" fill="#f2a583">HTTP 500 &#183; unsupported value: NaN</tspan><tspan> instead of 0%</tspan>
+    </text>
+
+    <!-- ==================== CAPTION ==================== -->
+    <rect x="32" y="548" width="836" height="64" rx="10" fill="#1b2735" stroke="#33465a" stroke-width="1"/>
+    <text x="450" y="576" font-size="16" font-weight="600" fill="#cbd8e4" text-anchor="middle">One logical step, N span names &#8212; funnels join on exact span name.</text>
+    <text x="450" y="598" font-size="12.5" fill="#8fa3b8" text-anchor="middle">A compatibility seam between the funnel primitive and the GenAI naming convention, not a defect in either.</text>
+
+  </g>
+</svg>

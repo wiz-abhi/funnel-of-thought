@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" role="img" aria-label="Two agent traces with identical spans in different order; only one honours the plan, tool, validate, respond contract.">
+  <title>The reasoning contract</title>
+  <defs>
+    <marker id="d1ArrowAmber" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#e0714a"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="560" fill="#0f1720"/>
+
+  <g font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+
+    <!-- header -->
+    <text x="32" y="42" font-size="23" font-weight="600" fill="#e6edf3">The reasoning contract</text>
+    <text x="32" y="68" font-size="14" fill="#93a4b5">Same four spans, same durations, drawn to the same time axis. Only the order differs.</text>
+
+    <!-- ============ PANEL A ============ -->
+    <rect x="32" y="92" width="836" height="148" rx="10" fill="#16212e" stroke="#27384a" stroke-width="1"/>
+    <circle cx="55" cy="114" r="5.5" fill="#4cc294"/>
+    <text x="70" y="119" font-size="14.5" font-weight="600" fill="#e6edf3">TRACE A</text>
+    <text x="141" y="119" font-size="14.5" fill="#4cc294">honours the contract</text>
+    <text x="855" y="119" font-size="11.5" fill="#6f8398" text-anchor="end">time &#8594;</text>
+
+    <!-- A rows -->
+    <g>
+      <circle cx="116" cy="142" r="9" fill="#1d3a30" stroke="#4cc294" stroke-width="1"/>
+      <text x="116" y="146" font-size="11" font-weight="600" fill="#7fd7b4" text-anchor="middle">1</text>
+      <text x="228" y="146.5" font-size="13" fill="#cbd8e4" text-anchor="end">agent.plan</text>
+      <rect x="240" y="134" width="110.7" height="16" rx="4" fill="#24614c" stroke="#4cc294" stroke-width="1.4"/>
+
+      <circle cx="116" cy="168" r="9" fill="#1d3a30" stroke="#4cc294" stroke-width="1"/>
+      <text x="116" y="172" font-size="11" font-weight="600" fill="#7fd7b4" text-anchor="middle">2</text>
+      <text x="228" y="172.5" font-size="13" fill="#cbd8e4" text-anchor="end">agent.tool</text>
+      <rect x="363" y="160" width="196.8" height="16" rx="4" fill="#24614c" stroke="#4cc294" stroke-width="1.4"/>
+
+      <circle cx="116" cy="194" r="9" fill="#1d3a30" stroke="#4cc294" stroke-width="1"/>
+      <text x="116" y="198" font-size="11" font-weight="600" fill="#7fd7b4" text-anchor="middle">3</text>
+      <text x="228" y="198.5" font-size="13" fill="#cbd8e4" text-anchor="end">agent.validate</text>
+      <rect x="572.1" y="186" width="86.1" height="16" rx="4" fill="#24614c" stroke="#4cc294" stroke-width="1.4"/>
+
+      <circle cx="116" cy="220" r="9" fill="#1d3a30" stroke="#4cc294" stroke-width="1"/>
+      <text x="116" y="224" font-size="11" font-weight="600" fill="#7fd7b4" text-anchor="middle">4</text>
+      <text x="228" y="224.5" font-size="13" fill="#cbd8e4" text-anchor="end">agent.respond</text>
+      <rect x="670.5" y="212" width="159.9" height="16" rx="4" fill="#24614c" stroke="#4cc294" stroke-width="1.4"/>
+    </g>
+
+    <!-- ============ PANEL B ============ -->
+    <rect x="32" y="256" width="836" height="192" rx="10" fill="#16212e" stroke="#27384a" stroke-width="1"/>
+    <circle cx="55" cy="278" r="5.5" fill="#e0714a"/>
+    <text x="70" y="283" font-size="14.5" font-weight="600" fill="#e6edf3">TRACE B</text>
+    <text x="141" y="283" font-size="14.5" fill="#e0714a">violates the contract</text>
+
+    <!-- B rows -->
+    <g>
+      <circle cx="116" cy="306" r="9" fill="#22303f" stroke="#6d8aa6" stroke-width="1"/>
+      <text x="116" y="310" font-size="11" font-weight="600" fill="#a8bccd" text-anchor="middle">1</text>
+      <text x="228" y="310.5" font-size="13" fill="#a8bccd" text-anchor="end">agent.plan</text>
+      <rect x="240" y="298" width="110.7" height="16" rx="4" fill="#33475c" stroke="#6d8aa6" stroke-width="1.4"/>
+
+      <circle cx="116" cy="332" r="9" fill="#4a2418" stroke="#e0714a" stroke-width="1.2"/>
+      <text x="116" y="336" font-size="11" font-weight="700" fill="#f0a07a" text-anchor="middle">2</text>
+      <text x="228" y="336.5" font-size="13" font-weight="600" fill="#f0a07a" text-anchor="end">agent.validate</text>
+      <rect x="363" y="324" width="86.1" height="16" rx="4" fill="#7a3b26" stroke="#e0714a" stroke-width="1.6"/>
+
+      <circle cx="116" cy="358" r="9" fill="#22303f" stroke="#6d8aa6" stroke-width="1"/>
+      <text x="116" y="362" font-size="11" font-weight="600" fill="#a8bccd" text-anchor="middle">3</text>
+      <text x="228" y="362.5" font-size="13" fill="#a8bccd" text-anchor="end">agent.tool</text>
+      <rect x="461.4" y="350" width="196.8" height="16" rx="4" fill="#33475c" stroke="#6d8aa6" stroke-width="1.4"/>
+
+      <circle cx="116" cy="384" r="9" fill="#22303f" stroke="#6d8aa6" stroke-width="1"/>
+      <text x="116" y="388" font-size="11" font-weight="600" fill="#a8bccd" text-anchor="middle">4</text>
+      <text x="228" y="388.5" font-size="13" fill="#a8bccd" text-anchor="end">agent.respond</text>
+      <rect x="670.5" y="376" width="159.9" height="16" rx="4" fill="#33475c" stroke="#6d8aa6" stroke-width="1.4"/>
+    </g>
+
+    <!-- shared time gridlines, drawn over both panels -->
+    <g stroke="#3a4d61" stroke-width="1" stroke-dasharray="2 7" opacity="0.75">
+      <line x1="240" y1="100" x2="240" y2="440"/>
+      <line x1="363" y1="100" x2="363" y2="440"/>
+      <line x1="486" y1="100" x2="486" y2="440"/>
+      <line x1="609" y1="100" x2="609" y2="440"/>
+      <line x1="732" y1="100" x2="732" y2="440"/>
+      <line x1="855" y1="100" x2="855" y2="440"/>
+    </g>
+
+    <!-- annotation leader -->
+    <line x1="406" y1="343" x2="406" y2="395" stroke="#e0714a" stroke-width="1.6" stroke-dasharray="4 4" marker-end="url(#d1ArrowAmber)"/>
+
+    <!-- annotation callout -->
+    <rect x="52" y="404" width="796" height="34" rx="8" fill="#2a1b16" stroke="#a3543a" stroke-width="1"/>
+    <text x="70" y="426" font-size="13.5" fill="#f0c0a8">
+      <tspan font-weight="600" fill="#f0a07a">agent.validate</tspan><tspan> ran before the tool result existed &#8212; it validated nothing.</tspan>
+    </text>
+
+    <!-- footer punchline -->
+    <rect x="32" y="468" width="836" height="56" rx="10" fill="#1b2735" stroke="#33465a" stroke-width="1"/>
+    <text x="450" y="502" font-size="16.5" text-anchor="middle" fill="#cbd8e4">
+      <tspan>Both traces contain all four spans. </tspan><tspan font-weight="700" fill="#f0a07a">A counter cannot tell them apart.</tspan>
+    </text>
+
+  </g>
+</svg>

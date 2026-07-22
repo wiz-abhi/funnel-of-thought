@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 490" width="800" height="490" role="img">
+  <style>
+    text { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    .h1  { font-size: 19px; font-weight: 600; fill: #e6edf3; }
+    .sub { font-size: 12.5px; fill: #a8bccd; }
+    .cap { font-size: 11.5px; fill: #a8bccd; letter-spacing: 1.4px; }
+    .num { font-size: 46px; font-weight: 700; }
+    .stat{ font-size: 14px; font-weight: 600; fill: #e6edf3; }
+    .lbl { font-size: 11.5px; fill: #a8bccd; }
+    .val { font-size: 13px; font-weight: 600; fill: #e6edf3; }
+    .foot{ font-size: 11.5px; fill: #8296a8; }
+    .joke{ font-size: 15px; fill: #e6edf3; }
+    .tag { font-size: 11.5px; font-weight: 600; }
+  </style>
+  <rect x="0" y="0" width="800" height="490" fill="#0f1720"/>
+
+  <text class="h1" x="40" y="44">validate step compliance, measured two ways</text>
+  <text class="sub" x="760" y="44" text-anchor="end">n = 125 traces</text>
+  <rect x="40" y="90" width="345" height="310" rx="14" fill="#16212e" stroke="#2b3b4d" stroke-width="1.5"/>
+  <text class="cap" x="64" y="121">the counter</text>
+  <rect x="296" y="106" width="64" height="22" rx="11" fill="#1d3a30" stroke="#24614c"/>
+  <text class="tag" x="328" y="121.5" text-anchor="middle" fill="#4cc294">pass</text>
+  <text class="num" x="212" y="190" text-anchor="middle" fill="#4cc294">100.0%</text>
+  <text class="stat" x="212" y="218" text-anchor="middle">validate step: PASSING</text>
+  <line x1="64" y1="238" x2="361" y2="238" stroke="#2b3b4d"/>
+  <text class="foot" x="212" y="388" text-anchor="middle">counts spans. order is not considered.</text>
+  <line x1="110" y1="266.0" x2="110" y2="257.0" stroke="#4a6076" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="110" cy="255.0" r="4.0" fill="#4cc294"/>
+  <rect x="84.0" y="266.0" width="52.0" height="42.0" rx="12.0" fill="#1b2735" stroke="#4a6076" stroke-width="2.0"/>
+  <circle cx="100.0" cy="283.0" r="5.0" fill="#4cc294"/>
+  <circle cx="120.0" cy="283.0" r="5.0" fill="#4cc294"/>
+  <path d="M 101.0 297.0 Q 110 304.0 119.0 297.0" fill="none" stroke="#4a6076" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="80.0" y="318.0" width="60.0" height="34.0" rx="12.0" fill="#1b2735" stroke="#4a6076" stroke-width="2.0"/>
+  <line x1="80.0" y1="328.0" x2="66.0" y2="342.0" stroke="#4a6076" stroke-width="5.0" stroke-linecap="round"/>
+  <line x1="140.0" y1="328.0" x2="154.0" y2="342.0" stroke="#4a6076" stroke-width="5.0" stroke-linecap="round"/>
+  <rect x="95.0" y="352.0" width="9.0" height="14.0" rx="4.0" fill="#4a6076"/>
+  <rect x="116.0" y="352.0" width="9.0" height="14.0" rx="4.0" fill="#4a6076"/>
+  <rect x="178" y="256" width="180" height="104" rx="10" fill="#131d29" stroke="#2b3b4d"/>
+  <text class="lbl" x="192" y="281">runs with a validate span</text>
+  <rect x="192" y="296" width="152" height="12" rx="6" fill="#1e2b38"/>
+  <rect x="192" y="296" width="152" height="12" rx="6" fill="#4cc294"/>
+  <text class="val" x="192" y="333">125 / 125</text>
+  <text class="val" x="344" y="333" text-anchor="end" fill="#4cc294">100%</text>
+  <rect x="415" y="90" width="345" height="310" rx="14" fill="#16212e" stroke="#2b3b4d" stroke-width="1.5"/>
+  <text class="cap" x="439" y="121">the funnel</text>
+  <rect x="651" y="106" width="84" height="22" rx="11" fill="#3a2117" stroke="#7d3d27"/>
+  <text class="tag" x="693" y="121.5" text-anchor="middle" fill="#e0714a">45 early</text>
+  <text class="num" x="587" y="190" text-anchor="middle" fill="#e0714a">64.0%</text>
+  <text class="stat" x="587" y="218" text-anchor="middle">validate step: 45 RUNS OUT OF ORDER</text>
+  <line x1="439" y1="238" x2="736" y2="238" stroke="#2b3b4d"/>
+  <text class="foot" x="587" y="388" text-anchor="middle">requires validate to follow the tool result.</text>
+  <line x1="485" y1="266.0" x2="485" y2="257.0" stroke="#4a6076" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="485" cy="255.0" r="4.0" fill="#4cc294"/>
+  <rect x="459.0" y="266.0" width="52.0" height="42.0" rx="12.0" fill="#1b2735" stroke="#4a6076" stroke-width="2.0"/>
+  <circle cx="475.0" cy="283.0" r="5.0" fill="#4cc294"/>
+  <circle cx="495.0" cy="283.0" r="5.0" fill="#4cc294"/>
+  <path d="M 476.0 297.0 Q 485 304.0 494.0 297.0" fill="none" stroke="#4a6076" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="455.0" y="318.0" width="60.0" height="34.0" rx="12.0" fill="#1b2735" stroke="#4a6076" stroke-width="2.0"/>
+  <line x1="455.0" y1="328.0" x2="441.0" y2="342.0" stroke="#4a6076" stroke-width="5.0" stroke-linecap="round"/>
+  <line x1="515.0" y1="330.0" x2="537.0" y2="324.0" stroke="#4a6076" stroke-width="5.0" stroke-linecap="round"/>
+  <rect x="470.0" y="352.0" width="9.0" height="14.0" rx="4.0" fill="#4a6076"/>
+  <rect x="491.0" y="352.0" width="9.0" height="14.0" rx="4.0" fill="#4a6076"/>
+  <path d="M 525 260 L 635 260 L 590 304 L 590 332 L 570 332 L 570 304 Z" fill="#101c27" stroke="#4a6076" stroke-width="2" stroke-linejoin="round"/>
+  <line x1="525" y1="260" x2="635" y2="260" stroke="#4a6076" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="580" cy="345" r="4.5" fill="#4cc294"/>
+  <circle cx="580" cy="358" r="3.2" fill="#4cc294" opacity="0.7"/>
+  <path d="M 614 280 C 646 296 672 318 684 346" fill="none" stroke="#e0714a" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 7" opacity="0.75"/>
+  <circle cx="622" cy="285" r="3.6" fill="#e0714a"/>
+  <circle cx="646" cy="300" r="3.4" fill="#e0714a"/>
+  <circle cx="668" cy="320" r="3.2" fill="#e0714a"/>
+  <circle cx="682" cy="344" r="3.0" fill="#e0714a"/>
+  <text x="694" y="322" font-size="12.5" font-weight="600" fill="#e0714a">45 traces</text>
+  <text x="694" y="338" font-size="10.5" fill="#a8bccd">out of order</text>
+  <line x1="40" y1="428" x2="760" y2="428" stroke="#22303f"/>
+  <text class="joke" x="400" y="457" text-anchor="middle">same 125 traces. one of them is lying.</text>
+</svg>
