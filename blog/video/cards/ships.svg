@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="1920" height="1080" fill="#0f1720"/>
+
+  <text x="160" y="250" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="34" letter-spacing="6" fill="#6d8aa6">WHAT IT SHIPS</text>
+
+  <!-- artifact 1 -->
+  <rect x="160" y="310" width="1600" height="150" rx="14" fill="#16212e"/>
+  <rect x="160" y="310" width="6" height="150" rx="3" fill="#4cc294"/>
+  <text x="210" y="374" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace" font-size="34" fill="#e8eef4">agent/</text>
+  <text x="210" y="424" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" fill="#9fb4c7">an OpenTelemetry-instrumented LangGraph agent —  <tspan font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace" fill="#6d8aa6">plan → tool → <tspan fill="#e0714a">validate</tspan> → respond</tspan></text>
+
+  <!-- artifact 2 -->
+  <rect x="160" y="490" width="1600" height="150" rx="14" fill="#16212e"/>
+  <rect x="160" y="490" width="6" height="150" rx="3" fill="#4cc294"/>
+  <text x="210" y="554" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace" font-size="34" fill="#e8eef4">fot</text>
+  <text x="210" y="604" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" fill="#9fb4c7">funnels as code over reasoning steps —  <tspan font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace" fill="#6d8aa6">apply · show · counter-proof · gauges · alert</tspan></text>
+
+  <!-- artifact 3 -->
+  <rect x="160" y="670" width="1600" height="150" rx="14" fill="#16212e"/>
+  <rect x="160" y="670" width="6" height="150" rx="3" fill="#4cc294"/>
+  <text x="210" y="734" font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace" font-size="34" fill="#e8eef4">signoz-funnel-mcp</text>
+  <text x="210" y="784" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" fill="#9fb4c7">the funnel tools SigNoz's MCP server doesn't ship —  <tspan font-family="ui-monospace, 'Cascadia Mono', Consolas, monospace" fill="#6d8aa6">0 of 41 existing tools reach funnels</tspan></text>
+
+  <!-- tech stack footer -->
+  <text x="160" y="920" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" font-size="26" fill="#6d8aa6">Python · OpenTelemetry SDK · LangGraph · Gemini (batch only — <tspan fill="#4cc294">zero LLM calls at runtime</tspan>) · self-hosted SigNoz via Foundry · Docker</text>
+</svg>

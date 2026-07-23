@@ -1,12 +1,17 @@
-"""Assemble the demo video.
+"""Assemble the demo video (v2).
 
-Conforms every visual segment to the MEASURED narration duration for its
-section (audio/timings.json), concatenates, muxes the narration track, and
-burns in captions.
+Conforms every visual segment to the section duration (audio-user/timings.json
+if present, else the v1 audio/timings.json reference), concatenates, muxes the
+narration track *if it exists*, and burns in captions.
 
-The audio is the master clock: SAPI section lengths never match the script's
-estimates exactly, and drifting captions look far worse than a shot that
-holds half a second longer.
+The audio is the master clock: recorded section lengths never match the
+script's estimates exactly, and drifting captions look far worse than a shot
+that holds half a second longer. Until the human's recordings arrive there is
+no narration — the build is then SILENT but still fully captioned (preview
+cut), driven by the --estimate durations in audio-user/timings.json.
+
+Guard: the finished video must stay < 3:00 (YouTube submission cap). Warn
+above 2:55, hard-fail above 2:59.
 
     python assemble.py            # full build
     python assemble.py --check    # report what's present/missing and exit
@@ -22,7 +27,8 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 SEG = HERE / "segments"
-AUD = HERE / "audio"
+AUD = HERE / "audio"                 # v1 TTS reference (never muxed in v2)
+USER = HERE / "audio-user"           # v2: human recordings + generated timings
 CARDS = HERE / "cards"
 ASSETS = HERE.parent / "assets"
 BUILD = HERE / "build"
@@ -30,18 +36,34 @@ OUT = HERE / "funnel-of-thought-demo.mp4"
 
 W, H, FPS = 1920, 1080, 30
 
-# section -> visual source. Sections 1-2 are stills; 3-8 are live captures.
-# Stills are listed as a sequence: each gets an equal share of the section.
+# <3:00 guard, measured on the finished file.
+WARN_S = 2 * 60 + 55                 # 175 -> warn
+FAIL_S = 2 * 60 + 59                 # 179 -> hard fail
+
+# section -> visual source (v2 mapping). §1-2 are stills; §3-8 are live
+# captures. Stills are a sequence: each gets an equal share of the section.
 PLAN: dict[int, dict] = {
-    1: {"stills": [CARDS / "title.png", ASSETS / "diagram-01-contract.png"]},
+    1: {"stills": [CARDS / "title.png",
+                   ASSETS / "diagram-01-contract.png",
+                   CARDS / "ships.png",
+                   ASSETS / "diagram-04-architecture.png"]},
     2: {"stills": [ASSETS / "meme-01-two-numbers.png"]},
     3: {"video": SEG / "shot3.mp4"},
     4: {"video": SEG / "shot4.mp4"},
     5: {"video": SEG / "shot5.mp4"},
     6: {"video": SEG / "shot6.mp4"},
     7: {"video": SEG / "shot7.mp4"},
-    8: {"video": SEG / "shot8.mp4", "tail_still": CARDS / "end.png", "tail": 5.0},
+    8: {"video": SEG / "shot8.mp4", "tail_still": CARDS / "end.png", "tail": 3.5},
 }
+
+
+def pick_timings() -> Path | None:
+    """Prefer the v2 audio-user/timings.json; fall back to v1 reference."""
+    if (USER / "timings.json").exists():
+        return USER / "timings.json"
+    if (AUD / "timings.json").exists():
+        return AUD / "timings.json"
+    return None
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> None:
@@ -60,11 +82,18 @@ def probe_duration(path: Path) -> float:
 
 
 def still_to_clip(img: Path, seconds: float, dst: Path) -> None:
-    """A still, letterboxed to 1080p, held for `seconds`."""
+    """A still held for `seconds`, with a reserved caption band.
+
+    Full-bleed 1920x1080 stills (the diagrams/cards) collide with burned-in
+    captions — a caption landed exactly on diagram-01's own footer text and
+    garbled both. So stills are scaled to 940px tall and top-padded, leaving a
+    ~110px clean band at the bottom that the caption style (MarginV=10 in
+    PlayRes space) lands inside. Video segments keep their native letterbox.
+    """
     run([
         "ffmpeg", "-y", "-loop", "1", "-t", f"{seconds:.3f}", "-i", str(img),
-        "-vf", f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
-               f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=#0f1720,fps={FPS},format=yuv420p",
+        "-vf", f"scale={W}:{H - 140}:force_original_aspect_ratio=decrease,"
+               f"pad={W}:{H}:(ow-iw)/2:30:color=#0f1720,fps={FPS},format=yuv420p",
         "-c:v", "libx264", "-preset", "medium", "-crf", "18", str(dst),
     ])
 
@@ -90,10 +119,10 @@ def main() -> None:
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
 
-    timings_path = AUD / "timings.json"
+    timings_path = pick_timings()
     missing = []
-    if not timings_path.exists():
-        missing.append(str(timings_path))
+    if timings_path is None:
+        missing.append(str(USER / "timings.json") + " (run: captions_v2.py --estimate)")
     for n, spec in PLAN.items():
         for key in ("video", "tail_still"):
             if key in spec and not spec[key].exists():
@@ -101,19 +130,24 @@ def main() -> None:
         for s in spec.get("stills", []):
             if not s.exists():
                 missing.append(str(s))
-    narration = AUD / "narration.wav"
-    if not narration.exists():
-        missing.append(str(narration))
+
+    # narration is OPTIONAL in v2: absent -> silent preview (still captioned).
+    narration = USER / "narration.wav"
+    have_audio = narration.exists()
 
     if args.check or missing:
-        print("MISSING:" if missing else "all inputs present")
+        print("MISSING:" if missing else "all required inputs present")
         for m in missing:
             print("  -", m)
         if args.check:
+            print(f"timings   : {timings_path if timings_path else '(none)'}")
+            print(f"narration : {'audio-user/narration.wav' if have_audio else 'NONE -> silent build'}")
             return
         sys.exit(1)
 
-    timings = json.loads(timings_path.read_text())
+    print(f"timings   : {timings_path}")
+    print(f"narration : {'audio-user/narration.wav' if have_audio else 'NONE -> SILENT preview build'}")
+    timings = json.loads(timings_path.read_text(encoding="utf-8"))
     by_n = {s["n"]: s for s in timings["sections"]}
 
     BUILD.mkdir(exist_ok=True)
@@ -144,11 +178,16 @@ def main() -> None:
     run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(listfile),
          "-c", "copy", str(silent)])
 
-    # Mux narration. Video may run longer than audio (the end card tail) — keep
-    # the video and let the audio finish early rather than truncating the card.
-    withaudio = BUILD / "withaudio.mp4"
-    run(["ffmpeg", "-y", "-i", str(silent), "-i", str(narration),
-         "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", str(withaudio)])
+    # Mux narration only if the human's recordings have been assembled. Video
+    # may run longer than audio (the end card tail) — keep the video and let the
+    # audio finish early rather than truncating the card. No narration -> the
+    # captioning step reads the silent concat directly (preview cut).
+    if have_audio:
+        base = BUILD / "withaudio.mp4"
+        run(["ffmpeg", "-y", "-i", str(silent), "-i", str(narration),
+             "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", str(base)])
+    else:
+        base = silent
 
     srt = HERE / "captions.srt"
     if srt.exists():
@@ -161,15 +200,28 @@ def main() -> None:
         # ffmpeg's subtitles filter splits options on ':', so a Windows drive
         # letter ("C:/…") is misread as an option. Run from the file's own
         # directory and pass a bare filename instead of escaping.
-        run(["ffmpeg", "-y", "-i", str(withaudio),
-             "-vf", f"subtitles={srt.name}:force_style='{style}'",
-             "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-             "-c:a", "copy", str(OUT)], cwd=HERE)
+        cmd = ["ffmpeg", "-y", "-i", str(base),
+               "-vf", f"subtitles={srt.name}:force_style='{style}'",
+               "-c:v", "libx264", "-preset", "medium", "-crf", "18"]
+        cmd += ["-c:a", "copy"] if have_audio else ["-an"]
+        cmd.append(str(OUT))
+        run(cmd, cwd=HERE)
     else:
-        shutil.copy(withaudio, OUT)
+        shutil.copy(base, OUT)
         print("NOTE: captions.srt absent — shipped without burned-in captions")
 
-    print(f"\nwrote {OUT}  ({probe_duration(OUT):.1f}s)")
+    dur = probe_duration(OUT)
+    kind = "with narration" if have_audio else "SILENT preview (captioned)"
+    print(f"\nwrote {OUT}  ({dur:.1f}s, {int(dur)//60}:{int(round(dur))%60:02d}, {kind})")
+
+    # <3:00 guard on the finished file.
+    if dur > FAIL_S:
+        sys.exit(f"GUARD FAIL: {dur:.1f}s > 2:59 — the finished video exceeds "
+                 f"the 3:00 cap. Tighten the script or a section duration.")
+    if dur > WARN_S:
+        print(f"GUARD WARN: {dur:.1f}s > 2:55 — under 3:00 but the margin is thin.")
+    else:
+        print(f"GUARD OK: {dur:.1f}s < 2:55 — comfortably under the 3:00 cap.")
 
 
 if __name__ == "__main__":
