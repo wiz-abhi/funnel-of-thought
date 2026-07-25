@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Funnel of Thought — a counter measures presence; a funnel measures sequence</title>
+<meta name="description" content="Measuring an AI agent's reasoning contract plan → tool → validate → respond as a SigNoz Trace Funnel.">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg:    '#0f1720',
+        panel: '#16212e',
+        good:  '#4cc294',
+        warn:  '#e0714a',
+        ink:   '#e8eef4',
+        muted: '#9fb4c7'
+      }
+    }
+  }
+}
+</script>
+<style>
+  :root { color-scheme: dark; }
+  html, body { background: #0f1720; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+  }
+  .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                       "Liberation Mono", monospace; }
+  .hair { border: 1px solid rgba(159,180,199,.16); }
+  .bar { transform-origin: left center; transition: width 900ms cubic-bezier(.22,.9,.3,1); }
+  .grow-in { animation: growIn 700ms cubic-bezier(.22,.9,.3,1) both; }
+  @keyframes growIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .bar { transition: none; }
+    .grow-in { animation: none; }
+  }
+</style>
+</head>
+<body class="min-h-full text-ink antialiased">
+<div class="mx-auto w-full max-w-[1180px] px-4 py-5 sm:px-6 sm:py-8">
+
+  <!-- ── header ─────────────────────────────────────────────────────────── -->
+  <header class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div class="min-w-0">
+      <h1 class="text-xl font-semibold tracking-tight sm:text-3xl">Funnel&nbsp;of&nbsp;Thought</h1>
+      <p class="mt-1 text-sm text-muted sm:text-[15px]">
+        A counter measures <span class="text-ink">presence</span>;
+        a funnel measures <span class="text-ink">sequence</span>.
+      </p>
+      <p class="mono mt-1.5 text-[11px] text-muted/80">
+        funnel <span class="text-ink/90">{{ d.funnel_name }}</span> ·
+        service <span class="text-ink/90">{{ d.service }}</span> ·
+        contract <span class="text-ink/90">plan → tool → validate → respond</span>
+      </p>
+    </div>
+
+    {% if d.mode == 'live' %}
+    <div class="shrink-0 rounded-md border border-good/40 bg-good/10 px-3 py-2">
+      <div class="flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-good"></span>
+        <span class="mono text-xs font-semibold tracking-wide text-good">LIVE</span>
+      </div>
+      <div class="mono mt-0.5 text-[11px] text-good/80">reading your SigNoz</div>
+    </div>
+    {% else %}
+    <div class="shrink-0 rounded-md border border-warn/40 bg-warn/10 px-3 py-2">
+      <div class="flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-warn"></span>
+        <span class="mono text-xs font-semibold tracking-wide text-warn">SNAPSHOT</span>
+      </div>
+      <div class="mono mt-0.5 text-[11px] text-warn/80">
+        frozen from a real run on {{ d.captured_at }}
+      </div>
+    </div>
+    {% endif %}
+  </header>
+
+  <!-- ── main grid ──────────────────────────────────────────────────────── -->
+  <main class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1.05fr_1fr]">
+
+    <!-- funnel -->
+    <section class="hair grow-in rounded-lg bg-panel p-4 sm:p-6">
+      <div class="flex items-baseline justify-between">
+        <h2 class="text-sm font-semibold">Ordered funnel</h2>
+        <span class="mono text-[11px] text-muted">{{ d.entered }} traces entered</span>
+      </div>
+
+      <div class="mt-5 space-y-5">
+        {% for s in d.steps %}
+        <div>
+          <div class="flex items-baseline justify-between gap-3">
+            <span class="mono text-[13px] {% if s.violation %}text-warn{% else %}text-ink{% endif %}">
+              {{ s.span }}
+            </span>
+            <span class="mono text-[12px] tabular-nums text-muted">
+              n=<span class="{% if s.violation %}text-warn{% else %}text-ink{% endif %} font-semibold">{{ s.n }}</span>
+              <span class="px-1 text-muted/50">·</span>
+              <span class="{% if s.violation %}text-warn{% else %}text-good{% endif %}">{{ '%.1f'|format(s.pct) }}%</span>
+            </span>
+          </div>
+          <div class="mt-2 h-8 w-full overflow-hidden rounded-sm bg-black/25">
+            <div class="bar h-full rounded-sm {% if s.violation %}bg-warn/80{% else %}bg-good/75{% endif %}"
+                 style="width:0%" data-target="{{ '%.2f'|format(s.pct) }}"></div>
+          </div>
+          {% if s.violation %}
+          <div class="mono mt-1 text-[11px] text-warn">
+            ▼ −{{ d.gap_traces }} traces — validate span existed, but not after the tool result
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- the money element: counter vs funnel -->
+    <section class="hair grow-in rounded-lg bg-panel p-4 sm:p-6">
+      <h2 class="text-sm font-semibold">Same {{ d.entered }} traces, two measurements</h2>
+
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <div class="rounded-md border border-warn/30 bg-warn/[.07] p-3 text-center">
+          <div class="mono text-[10px] uppercase tracking-wider text-muted">naive counter</div>
+          <div class="mono mt-1 text-4xl font-bold leading-none tabular-nums text-warn sm:text-6xl">
+            {{ '%.1f'|format(d.naive.pct) }}<span class="text-2xl sm:text-4xl">%</span>
+          </div>
+          <div class="mono mt-1.5 text-[11px] text-muted">
+            {{ d.naive.span }} in {{ d.naive.present }}/{{ d.naive.total }}
+          </div>
+        </div>
+        <div class="rounded-md border border-good/30 bg-good/[.07] p-3 text-center">
+          <div class="mono text-[10px] uppercase tracking-wider text-muted">ordered funnel</div>
+          <div class="mono mt-1 text-4xl font-bold leading-none tabular-nums text-good sm:text-6xl">
+            {{ '%.1f'|format(d.funnel_pct) }}<span class="text-2xl sm:text-4xl">%</span>
+          </div>
+          <div class="mono mt-1.5 text-[11px] text-muted">
+            end-to-end {{ d.completed }}/{{ d.entered }}
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3 rounded-md border border-warn/40 bg-gradient-to-r from-warn/15 to-transparent p-4">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <div class="mono text-[10px] uppercase tracking-wider text-warn/90">the gap</div>
+            <div class="mono mt-0.5 text-[11px] text-muted">
+              {{ d.gap_traces }} traces the counter called healthy
+            </div>
+          </div>
+          <div class="mono text-4xl font-bold leading-none tabular-nums text-warn sm:text-[54px]">
+            {{ '%.1f'|format(d.gap_pp) }}<span class="text-xl sm:text-2xl">pp</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="mt-3 text-[12.5px] leading-relaxed text-muted">
+        A counter asks <span class="text-ink">“did the span exist?”</span> —
+        a funnel asks <span class="text-ink">“did it happen <em>after</em> the previous step?”</span>
+      </p>
+    </section>
+  </main>
+
+  <!-- ── metrics strip ──────────────────────────────────────────────────── -->
+  <div class="mt-5 grid grid-cols-3 gap-3">
+    <div class="hair rounded-lg bg-panel px-4 py-3.5">
+      <div class="mono text-[10px] uppercase tracking-wider text-muted">avg duration</div>
+      <div class="mono mt-1 text-xl font-semibold tabular-nums">{{ '%.2f'|format(d.metrics.avg_duration_s) }}s</div>
+    </div>
+    <div class="hair rounded-lg bg-panel px-4 py-3.5">
+      <div class="mono text-[10px] uppercase tracking-wider text-muted">p99 latency</div>
+      <div class="mono mt-1 text-xl font-semibold tabular-nums">{{ '%.2f'|format(d.metrics.p99_latency_s) }}s</div>
+    </div>
+    <div class="hair rounded-lg bg-panel px-4 py-3.5">
+      <div class="mono text-[10px] uppercase tracking-wider text-muted">errors</div>
+      <div class="mono mt-1 text-xl font-semibold tabular-nums text-warn">{{ d.metrics.errors }}</div>
+    </div>
+  </div>
+
+  <!-- ── violating trace ────────────────────────────────────────────────── -->
+  <section class="hair mt-5 rounded-lg bg-panel p-4 sm:p-5">
+    <button id="toggle" type="button" aria-expanded="false" aria-controls="waterfall"
+            class="flex w-full items-center justify-between gap-3 text-left">
+      <span class="text-sm font-semibold">Show me a violating trace</span>
+      <span class="mono flex items-center gap-2 text-[11px] text-muted">
+        <span id="toggle-hint">1 of {{ d.gap_traces }}</span>
+        <span id="chev" class="inline-block transition-transform">▾</span>
+      </span>
+    </button>
+
+    <div id="waterfall" hidden class="mt-4">
+      <div class="mono mb-2 text-[11px] text-muted">
+        trace <span class="text-ink/90">{{ d.violating_trace.trace_id }}</span>
+        <span class="px-1 text-muted/50">·</span>{{ d.violating_trace.total_ms }}ms
+      </div>
+      <div class="space-y-1.5">
+        {% for sp in d.violating_trace.spans %}
+        {% set left = 100.0 * sp.start / d.violating_trace.total_ms %}
+        {% set width = 100.0 * sp.duration / d.violating_trace.total_ms %}
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span class="mono w-[104px] shrink-0 text-right text-[11px] sm:w-[124px] sm:text-[12px]
+                       {% if sp.state == 'violation' %}text-warn{% else %}text-muted{% endif %}">{{ sp.name }}</span>
+          <div class="relative h-5 flex-1 rounded-sm bg-black/25">
+            <div class="absolute top-0 h-full rounded-sm {% if sp.state == 'violation' %}bg-warn{% else %}bg-good/60{% endif %}"
+                 style="left:{{ '%.2f'|format(left) }}%; width:{{ '%.2f'|format(width) }}%"></div>
+          </div>
+          <span class="mono w-[52px] shrink-0 text-right text-[11px] tabular-nums text-muted">{{ sp.duration }}ms</span>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="mt-3 text-[12.5px] text-warn">
+        {{ d.violating_trace.caption }}
+      </p>
+      <p class="mt-1 text-[12px] text-muted">
+        The span is present, so the counter scores it 100%. The funnel requires
+        <span class="mono text-ink">agent.validate</span> to start after
+        <span class="mono text-ink">agent.tool</span> ends, so it scores it a drop-off.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── footer ─────────────────────────────────────────────────────────── -->
+  <footer class="mt-6 flex flex-col gap-1.5 border-t border-muted/15 pt-3 text-[11px] text-muted sm:flex-row sm:items-center sm:justify-between">
+    <span class="mono">
+      data:
+      <a href="/api/funnel" class="text-muted underline decoration-muted/40 underline-offset-2 hover:text-ink">/api/funnel</a>
+      {% if d.fallback_reason %}<span class="text-muted/60"> · {{ d.fallback_reason }}</span>{% endif %}
+    </span>
+    <a href="https://github.com/wiz-abhi/funnel-of-thought" target="_blank" rel="noopener"
+       class="mono text-muted underline decoration-muted/40 underline-offset-2 hover:text-ink">
+      github.com/wiz-abhi/funnel-of-thought
+    </a>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // animate the funnel bars on load
+  requestAnimationFrame(function () {
+    setTimeout(function () {
+      document.querySelectorAll('.bar').forEach(function (el, i) {
+        setTimeout(function () { el.style.width = el.dataset.target + '%'; }, i * 110);
+      });
+    }, 60);
+  });
+
+  // violating-trace toggle
+  var btn = document.getElementById('toggle');
+  var panel = document.getElementById('waterfall');
+  var chev = document.getElementById('chev');
+  btn.addEventListener('click', function () {
+    var open = panel.hasAttribute('hidden');
+    if (open) { panel.removeAttribute('hidden'); } else { panel.setAttribute('hidden', ''); }
+    btn.setAttribute('aria-expanded', String(open));
+    chev.style.transform = open ? 'rotate(180deg)' : 'none';
+  });
+})();
+</script>
+</body>
+</html>

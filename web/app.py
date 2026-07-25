@@ -76,11 +76,21 @@ def load_snapshot(reason: str | None = None) -> dict[str, Any]:
 
 
 def _has_credentials() -> bool:
-    return bool(
-        os.environ.get("SIGNOZ_API_KEY")
-        or os.environ.get("SIGNOZ_JWT")
-        or (os.environ.get("SIGNOZ_EMAIL") and os.environ.get("SIGNOZ_PASSWORD"))
-    )
+    """True when *some* usable SigNoz credential exists.
+
+    Env keys, a login pair, or a JWT cached by a previous ``fot`` run (which the
+    client picks up on its own).
+    """
+    if os.environ.get("SIGNOZ_API_KEY") or os.environ.get("SIGNOZ_JWT"):
+        return True
+    if os.environ.get("SIGNOZ_EMAIL") and os.environ.get("SIGNOZ_PASSWORD"):
+        return True
+    try:
+        from fot.signoz import REPO_TOKEN_FILE, TOKEN_CACHE
+
+        return TOKEN_CACHE.exists() or REPO_TOKEN_FILE.exists()
+    except Exception:  # noqa: BLE001 - fot package absent in a UI-only deploy
+        return False
 
 
 def fetch_live() -> dict[str, Any]:
@@ -90,9 +100,8 @@ def fetch_live() -> dict[str, Any]:
     base = os.environ.get("SIGNOZ_URL", "http://localhost:8080")
     client = SigNozClient(base, timeout=15.0)
     try:
-        if not os.environ.get("SIGNOZ_API_KEY") and not os.environ.get("SIGNOZ_JWT"):
-            client.login()  # uses SIGNOZ_EMAIL / SIGNOZ_PASSWORD or a cached token
-
+        # No explicit login: the client resolves API key -> JWT -> cached token,
+        # and transparently re-logs-in with SIGNOZ_EMAIL/PASSWORD on a 401.
         funnel = client.find_funnel(FUNNEL_NAME)
         if not funnel:
             raise RuntimeError(f"funnel {FUNNEL_NAME!r} not found on {base}")
@@ -179,7 +188,7 @@ def get_payload(force_refresh: bool = False) -> dict[str, Any]:
     elif MODE == "live":
         payload = fetch_live()
     else:  # auto
-        if not _has_credentials() and not os.environ.get("SIGNOZ_EMAIL"):
+        if not _has_credentials():
             payload = load_snapshot("no SigNoz credentials in the environment")
         else:
             try:

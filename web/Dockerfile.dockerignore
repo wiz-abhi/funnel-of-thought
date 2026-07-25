@@ -1,0 +1,13 @@
+# BuildKit picks up "<dockerfile>.dockerignore" in preference to a root
+# .dockerignore, so this keeps the build context small without adding a file to
+# the repo root. Build from the repo root:
+#
+#   docker build -f web/Dockerfile -t fot-web .
+*
+!web/app.py
+!web/requirements.txt
+!web/templates
+!web/data
+!fot
+**/__pycache__
+**/*.pyc

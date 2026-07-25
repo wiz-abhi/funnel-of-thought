@@ -48,3 +48,4 @@ runs/
 secrets.json
 token_dump.json
 venv/
+web/.venv/
