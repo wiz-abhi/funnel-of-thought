@@ -2,10 +2,27 @@
 
 **An AI agent that watches itself think — and tells you the exact step where it stopped.**
 
+![The cognition funnel: 125 runs start, 80 reach validate in order](docs/media/hero-funnel.gif)
+
 `plan → tool → validate → respond` is a contract. Most agents are trusted to
 honour it and never measured against it. Funnel of Thought measures it, as a
 conversion funnel, in SigNoz, live — and ships the funnel MCP tools that let
 the agent run that measurement over its own traces without a human in the loop.
+
+## The 30-second version
+
+My agent has a validation step. A dashboard said it ran in **100% of runs**.
+A funnel over the same **125 traces** said **64%**.
+
+![Counter says 100%, funnel says 64%, gap 36pp](docs/media/counter-proof.gif)
+
+Both queries are correct. They answer different questions — and 45 runs emitted
+their `validate` span **before the tool result existed**, so the agent validated
+an answer that had not arrived yet. Every presence-based metric you own scores
+those runs as a success.
+
+> **A counter measures presence. A funnel measures sequence.
+> Only one of those is the contract.**
 
 The read path is deterministic REST over spans that already landed. No LLM
 sits between you and the answer, so building a funnel and reading it back is a
@@ -97,7 +114,23 @@ a graph.**
 
 ---
 
+## It runs in SigNoz, not just in my terminal
+
+The funnel is a real SigNoz object — the CLI and SigNoz's own UI agree to the
+decimal:
+
+![SigNoz Funnels UI showing the cognition funnel at 64.00% conversion](blog/assets/04-signoz-funnel.png)
+
+And the violation is visible in a single trace — `agent.validate` in red,
+finishing *before* the `agent.tool` call whose output it was supposed to check:
+
+![Trace waterfall: plan, validate (red, out of order), tool, respond](blog/assets/07-trace-flamegraph.png)
+
+---
+
 ## Architecture
+
+![Architecture: agent to SigNoz to CLI, MCP server, dashboard and alert](blog/assets/diagram-04-architecture.png)
 
 ```
    ┌───────────────────────────────────────────────────────────────────────┐

@@ -1,0 +1,40 @@
+{
+  "mode": "snapshot",
+  "captured_at": "2026-07-22",
+  "funnel_name": "cognition",
+  "service": "fot-agent",
+  "thesis": "A counter measures presence; a funnel measures sequence.",
+  "steps": [
+    { "label": "plan",     "span": "agent.plan",     "n": 125, "pct": 100.0, "violation": false },
+    { "label": "tool",     "span": "agent.tool",     "n": 125, "pct": 100.0, "violation": false },
+    { "label": "validate", "span": "agent.validate", "n": 80,  "pct": 64.0,  "violation": true  },
+    { "label": "respond",  "span": "agent.respond",  "n": 80,  "pct": 64.0,  "violation": false }
+  ],
+  "entered": 125,
+  "completed": 80,
+  "funnel_pct": 64.0,
+  "naive": {
+    "span": "agent.validate",
+    "present": 125,
+    "total": 125,
+    "pct": 100.0
+  },
+  "gap_pp": 36.0,
+  "gap_traces": 45,
+  "metrics": {
+    "avg_duration_s": 2.59,
+    "p99_latency_s": 3.34,
+    "errors": 45
+  },
+  "violating_trace": {
+    "trace_id": "7f3c1a9e4b2d8065",
+    "caption": "validate finished before the tool it was checking even started.",
+    "spans": [
+      { "name": "agent.plan",     "start": 0,    "duration": 420,  "state": "ok" },
+      { "name": "agent.validate", "start": 430,  "duration": 260,  "state": "violation" },
+      { "name": "agent.tool",     "start": 700,  "duration": 1180, "state": "ok" },
+      { "name": "agent.respond",  "start": 1890, "duration": 640,  "state": "ok" }
+    ],
+    "total_ms": 2530
+  }
+}
