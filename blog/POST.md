@@ -95,6 +95,8 @@ Open one and it's plainly visible in the waterfall:
 
 That's the transferable idea, and it's worth stating sharply: a counter isn't a coarser answer, it's the **wrong question**. Aggregating per-span and dividing throws away the per-trace join, and no amount of extra `GROUP BY` columns gets it back — ordering is a property of the trace, not of the span.
 
+![One trace, two readers — a counter asks "did validate exist?" (100%), a funnel asks "did it come after tool?" (64%)](assets/contract-sketch.png)
+
 ![Everything was green](assets/meme-02-everything-is-green.png)
 
 ## Three potholes
@@ -129,7 +131,7 @@ The agent emits spans → SigNoz computes the funnel → **the agent calls `get_
 
 And it's *fast*, which is the part I didn't expect to care about. The read path has **no model in it** — it's REST over spans that already landed, plus arithmetic. Build-and-re-read is sub-second. An agent that *reasons* about telemetry takes ~40 seconds and costs money per investigation; this takes about a second and costs nothing, because it's an **instrument**, not an investigator. That's also why it can live in a dashboard panel and a threshold alert instead of being run on demand.
 
-![Architecture](assets/diagram-04-architecture.png)
+![Architecture: agent → OTLP → SigNoz, fanning out to the fot CLI, the MCP server, and a dashboard + alert](assets/arch-sketch.png)
 
 That's also what makes it operational rather than a chart you visit. `fot gauges` re-emits each step's conversion as an OTLP gauge on a tick, so the funnel becomes something a dashboard panel and a threshold rule can read. Point a rule at the validate step with a floor of 90% and it goes red on its own:
 
