@@ -309,17 +309,12 @@
       <span class="brand-name">Funnel of Thought</span>
     </div>
 
-    {% if d.mode == 'live' %}
-    <div class="badge live" title="Reading your live SigNoz Trace Funnel">
-      <span class="dot"></span> LIVE
-      <span class="sub">· reading your SigNoz</span>
-    </div>
-    {% else %}
+    
     <div class="badge snap" title="Frozen fixture from a real run — not live data">
       <span class="dot"></span> SNAPSHOT
-      <span class="sub">· frozen {{ d.captured_at }}</span>
+      <span class="sub">· frozen 2026-07-22</span>
     </div>
-    {% endif %}
+    
   </nav>
 
   <!-- ── hero / explainer ────────────────────────────────── -->
@@ -363,7 +358,7 @@
   <section class="block reveal-on-scroll">
     <div class="sec-head">
       <p class="kicker">The money moment</p>
-      <h2 class="sec-title">Same {{ d.entered }} traces, two measurements</h2>
+      <h2 class="sec-title">Same 125 traces, two measurements</h2>
       <p class="sec-sub">One number keeps you asleep. The other is what actually happened.</p>
     </div>
 
@@ -371,25 +366,25 @@
       <div class="card stat naive">
         <span class="tag">what your dashboard shows</span>
         <div class="cap">Naive counter</div>
-        <div class="q">“did the <b>{{ d.naive.span }}</b> span exist?”</div>
-        <div class="big"><span class="countup tnum" data-to="{{ '%.1f'|format(d.naive.pct) }}" data-dp="1">0.0</span><span class="pct">%</span></div>
-        <div class="foot">present in {{ d.naive.present }}/{{ d.naive.total }} traces</div>
+        <div class="q">“did the <b>agent.validate</b> span exist?”</div>
+        <div class="big"><span class="countup tnum" data-to="100.0" data-dp="1">0.0</span><span class="pct">%</span></div>
+        <div class="foot">present in 125/125 traces</div>
       </div>
       <div class="card stat funnel">
         <span class="tag">what really happened</span>
         <div class="cap">Ordered funnel</div>
         <div class="q">“did it happen <b>after</b> the previous step?”</div>
-        <div class="big"><span class="countup tnum" data-to="{{ '%.1f'|format(d.funnel_pct) }}" data-dp="1">0.0</span><span class="pct">%</span></div>
-        <div class="foot">completed in order {{ d.completed }}/{{ d.entered }}</div>
+        <div class="big"><span class="countup tnum" data-to="64.0" data-dp="1">0.0</span><span class="pct">%</span></div>
+        <div class="foot">completed in order 80/125</div>
       </div>
     </div>
 
     <div class="gap-bar">
       <div class="l">
         <div class="k">The gap</div>
-        <div class="d"><b>{{ d.gap_traces }} traces</b> the counter called healthy — that never validated in order</div>
+        <div class="d"><b>45 traces</b> the counter called healthy — that never validated in order</div>
       </div>
-      <div class="n"><span class="countup tnum" data-to="{{ '%.1f'|format(d.gap_pp) }}" data-dp="1">0.0</span><span class="u">pp</span></div>
+      <div class="n"><span class="countup tnum" data-to="36.0" data-dp="1">0.0</span><span class="u">pp</span></div>
     </div>
   </section>
 
@@ -403,33 +398,84 @@
 
     <div class="card funnel">
       <div class="funnel-head">
-        <span class="t">{{ d.funnel_name }} · {{ d.service }}</span>
-        <span class="m">{{ d.entered }} traces entered</span>
+        <span class="t">cognition · fot-agent</span>
+        <span class="m">125 traces entered</span>
       </div>
 
-      {% for s in d.steps %}
+      
       <div class="step">
         <div class="step-top">
-          <span class="step-name {% if s.violation %}viol{% endif %}">
-            <span class="idx">{{ loop.index }}</span>{{ s.span }}
+          <span class="step-name ">
+            <span class="idx">1</span>agent.plan
           </span>
           <span class="step-meta">
-            n=<span class="n {% if s.violation %}viol{% endif %}">{{ s.n }}</span>
+            n=<span class="n ">125</span>
             &nbsp;·&nbsp;
-            <span class="p {% if s.violation %}viol{% endif %}">{{ '%.1f'|format(s.pct) }}%</span>
+            <span class="p ">100.0%</span>
           </span>
         </div>
         <div class="track">
-          <div class="bar {% if s.violation %}viol{% endif %}" data-target="{{ '%.2f'|format(s.pct) }}"></div>
+          <div class="bar " data-target="100.00"></div>
         </div>
-        {% if s.violation %}
+        
+      </div>
+      
+      <div class="step">
+        <div class="step-top">
+          <span class="step-name ">
+            <span class="idx">2</span>agent.tool
+          </span>
+          <span class="step-meta">
+            n=<span class="n ">125</span>
+            &nbsp;·&nbsp;
+            <span class="p ">100.0%</span>
+          </span>
+        </div>
+        <div class="track">
+          <div class="bar " data-target="100.00"></div>
+        </div>
+        
+      </div>
+      
+      <div class="step">
+        <div class="step-top">
+          <span class="step-name viol">
+            <span class="idx">3</span>agent.validate
+          </span>
+          <span class="step-meta">
+            n=<span class="n viol">80</span>
+            &nbsp;·&nbsp;
+            <span class="p viol">64.0%</span>
+          </span>
+        </div>
+        <div class="track">
+          <div class="bar viol" data-target="64.00"></div>
+        </div>
+        
         <div class="drop">
-          <span class="amt">−{{ d.gap_traces }} traces</span>
+          <span class="amt">−45 traces</span>
           the validate span existed, but not after the tool result
         </div>
-        {% endif %}
+        
       </div>
-      {% endfor %}
+      
+      <div class="step">
+        <div class="step-top">
+          <span class="step-name ">
+            <span class="idx">4</span>agent.respond
+          </span>
+          <span class="step-meta">
+            n=<span class="n ">80</span>
+            &nbsp;·&nbsp;
+            <span class="p ">64.0%</span>
+          </span>
+        </div>
+        <div class="track">
+          <div class="bar " data-target="64.00"></div>
+        </div>
+        
+      </div>
+      
     </div>
   </section>
 
@@ -438,13 +484,13 @@
     <div class="sec-head">
       <p class="kicker warn">Why a counter can't see it</p>
       <h2 class="sec-title">Presence is not sequence</h2>
-      <p class="sec-sub">A span can be present and still be wrong. Here's one of the {{ d.gap_traces }} traces the counter waved through.</p>
+      <p class="sec-sub">A span can be present and still be wrong. Here's one of the 45 traces the counter waved through.</p>
     </div>
 
     <div class="two-col">
       <div class="card prose-card">
         <p>
-          A <b>counter</b> asks a yes/no question: <span class="hi-warn">did the <code>{{ d.naive.span }}</code> span exist?</span>
+          A <b>counter</b> asks a yes/no question: <span class="hi-warn">did the <code>agent.validate</code> span exist?</span>
           If yes, it scores the trace healthy — 100%. It has no notion of time, so it can't tell a
           validation that <em>checked the tool result</em> from one that ran before the tool even started.
         </p>
@@ -455,31 +501,64 @@
           every span is technically present.
         </p>
         <p>
-          That's the whole idea: <b>{{ d.thesis }}</b>
+          That's the whole idea: <b>A counter measures presence; a funnel measures sequence.</b>
         </p>
       </div>
 
       <div class="card reveal" id="reveal">
         <button class="reveal-btn" id="revealBtn" type="button" aria-expanded="false" aria-controls="wf">
           <span class="t"><span class="ic" aria-hidden="true">⚡</span>Show me a violating trace</span>
-          <span class="r"><span id="revealHint">1 of {{ d.gap_traces }}</span><span class="chev">▾</span></span>
+          <span class="r"><span id="revealHint">1 of 45</span><span class="chev">▾</span></span>
         </button>
         <div class="wf" id="wf">
           <div class="wf-inner">
-            <div class="wf-meta">trace <b>{{ d.violating_trace.trace_id }}</b> · {{ d.violating_trace.total_ms }}ms</div>
-            {% for sp in d.violating_trace.spans %}
-            {% set left = 100.0 * sp.start / d.violating_trace.total_ms %}
-            {% set width = 100.0 * sp.duration / d.violating_trace.total_ms %}
+            <div class="wf-meta">trace <b>7f3c1a9e4b2d8065</b> · 2530ms</div>
+            
+            
+            
             <div class="wf-row">
-              <span class="nm {% if sp.state == 'violation' %}viol{% endif %}">{{ sp.name }}</span>
+              <span class="nm ">agent.plan</span>
               <div class="wf-track">
-                <div class="wf-span {% if sp.state == 'violation' %}viol{% endif %}"
-                     style="left:{{ '%.2f'|format(left) }}%; width:{{ '%.2f'|format(width) }}%"></div>
+                <div class="wf-span "
+                     style="left:0.00%; width:16.60%"></div>
               </div>
-              <span class="du">{{ sp.duration }}ms</span>
+              <span class="du">420ms</span>
             </div>
-            {% endfor %}
-            <p class="wf-caption">{{ d.violating_trace.caption }}</p>
+            
+            
+            
+            <div class="wf-row">
+              <span class="nm viol">agent.validate</span>
+              <div class="wf-track">
+                <div class="wf-span viol"
+                     style="left:17.00%; width:10.28%"></div>
+              </div>
+              <span class="du">260ms</span>
+            </div>
+            
+            
+            
+            <div class="wf-row">
+              <span class="nm ">agent.tool</span>
+              <div class="wf-track">
+                <div class="wf-span "
+                     style="left:27.67%; width:46.64%"></div>
+              </div>
+              <span class="du">1180ms</span>
+            </div>
+            
+            
+            
+            <div class="wf-row">
+              <span class="nm ">agent.respond</span>
+              <div class="wf-track">
+                <div class="wf-span "
+                     style="left:74.70%; width:25.30%"></div>
+              </div>
+              <span class="du">640ms</span>
+            </div>
+            
+            <p class="wf-caption">validate finished before the tool it was checking even started.</p>
             <p class="wf-note">
               The span is present, so the counter scores it 100%. The funnel requires
               <code>agent.validate</code> to start after <code>agent.tool</code> ends — so it scores it a drop-off.
@@ -499,15 +578,15 @@
     <div class="metrics">
       <div class="card metric">
         <div class="cap">Avg duration</div>
-        <div class="v">{{ '%.2f'|format(d.metrics.avg_duration_s) }}s</div>
+        <div class="v">2.59s</div>
       </div>
       <div class="card metric">
         <div class="cap">p99 latency</div>
-        <div class="v">{{ '%.2f'|format(d.metrics.p99_latency_s) }}s</div>
+        <div class="v">3.34s</div>
       </div>
       <div class="card metric">
         <div class="cap">Errors</div>
-        <div class="v warn">{{ d.metrics.errors }}</div>
+        <div class="v warn">45</div>
       </div>
     </div>
   </section>
@@ -516,7 +595,7 @@
   <footer class="ft">
     <span>
       data: <a href="/api/funnel">/api/funnel</a>
-      {% if d.fallback_reason %}<span class="reason"> · {{ d.fallback_reason }}</span>{% endif %}
+      
     </span>
     <span class="thesis">a counter measures presence; a funnel measures sequence.</span>
     <a href="https://github.com/wiz-abhi/funnel-of-thought" target="_blank" rel="noopener">github.com/wiz-abhi/funnel-of-thought</a>
