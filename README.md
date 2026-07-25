@@ -1,3 +1,5 @@
+![Funnel of Thought — a counter measures presence, a funnel measures sequence](docs/media/banner.gif)
+
 # Funnel of Thought
 
 **An AI agent that watches itself think — and tells you the exact step where it stopped.**
@@ -25,6 +27,8 @@ those runs as a success.
 
 > **A counter measures presence. A funnel measures sequence.
 > Only one of those is the contract.**
+
+![One trace, two readers: the counter says 100%, the funnel says 64%](docs/media/contract-sketch.png)
 
 The read path is deterministic REST over spans that already landed. No LLM
 sits between you and the answer, so building a funnel and reading it back is a
@@ -132,7 +136,7 @@ finishing *before* the `agent.tool` call whose output it was supposed to check:
 
 ## Architecture
 
-![Architecture: agent to SigNoz to CLI, MCP server, dashboard and alert](blog/assets/diagram-04-architecture.png)
+![Architecture sketch: agent to OTLP to SigNoz, fanning out to the CLI, the MCP server, and a dashboard + alert](docs/media/arch-sketch.png)
 
 ```
    ┌───────────────────────────────────────────────────────────────────────┐
