@@ -42,6 +42,9 @@ credentials.json
 desktop.ini
 dist/
 env/
+hf-space/
+hf-static-preview.png
+hf-static/
 htmlcov/
 out/
 runs/
