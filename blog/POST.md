@@ -145,6 +145,25 @@ That's also what makes it operational rather than a chart you visit. `fot gauges
 ![SigNoz alert rule 'Reasoning contract: validate step below 90%' in Firing state](assets/06-alert-firing.png)
 <figcaption>Firing at 64% against a 90% floor. Labelled by funnel and step, so the page tells you which contract broke.</figcaption>
 
+## Run it yourself
+
+Everything above is reproducible on a laptop — Docker, Python 3.11+, and a free Gemini key:
+
+```bash
+git clone https://github.com/wiz-abhi/funnel-of-thought && cd funnel-of-thought
+foundryctl cast                  # SigNoz + its MCP server, pinned to v0.132.2
+# create the admin account at localhost:8080, then:
+cp .env.example .env             # set GEMINI_API_KEY
+pip install -e ".[all]"
+./scripts/setup.sh               # token, funnels, dashboard, alert, and a batch of runs
+fot show                         # the cliff, with n on every bar
+fot counter-proof                # the naive counter beside the ordered funnel
+```
+
+`casting.yaml` and its lockfile are committed, so `foundryctl cast` brings up the same stack I measured on. One gotcha the setup script handles for you: funnel *writes* need an editor JWT, not an API key — an API key returns `403 only editors/admins can access this resource`.
+
+If you only want the finding, `./scripts/reproduce.sh` does the whole thing in under ten minutes — it builds both funnels, prints the working cliff, then triggers the fragmented one and shows the `500` verbatim. It exits non-zero if any claim in this post fails to reproduce on your machine.
+
 ## The boundary, and one thing I got wrong
 
 Funnels aggregate with `minIf` over a monotonic step index: first occurrence wins, order is enforced. So they are **structurally blind to loops and retries** — validated once and validated five times after four failures are the same funnel. Phoenix's agent-path graph and Datadog's execution-loop view are the loop-aware complements. Funnel the linear contract; loops want a graph. That's the ceiling, and owning it is the contribution.
