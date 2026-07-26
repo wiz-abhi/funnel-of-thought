@@ -40,7 +40,7 @@ while you are still looking at the screen.
 > tracking "drop-offs across your AI agent pipelines." They built the only
 > funnel primitive in the observability space, and they pointed it at agents
 > first. This project is the adapter that makes that pairing work on a
-> stock-OpenTelemetry agent, plus the four MCP tools that make it reachable
+> stock-OpenTelemetry agent, plus the five MCP tools that make it reachable
 > from inside one.
 
 ---
@@ -51,7 +51,7 @@ Every LLM-observability tool shows you traces — Langfuse, LangSmith, Phoenix,
 Braintrust. None has a **funnel primitive**: a way to ask *"of the runs that
 started reasoning, what fraction completed each step, in order?"* SigNoz does.
 Pointing it at a spec-compliant agent needs things nobody wrote down. Building
-this surfaced six of them — the [blog](blog/POST.md) has the full story; in short:
+this surfaced six of them — the [blog](https://medium.com/@abhiiishek0101/i-gave-my-ai-agent-a-funnel-over-its-own-reasoning-it-told-me-exactly-where-it-stops-thinking-b4e0d1cb53d1) has the full story; in short:
 
 - **Steps match on the *exact* span name** — no wildcards. The name you pick is load-bearing.
 - **OTel's GenAI convention puts the model inside the span name** (`chat gemini-3.1-flash-lite`), so one logical step fragments across N names on any model swap, and the funnel silently reads 0%. Two correct specs, quietly incompatible.
