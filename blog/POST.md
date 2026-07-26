@@ -1,6 +1,6 @@
 # I gave my AI agent a funnel over its own reasoning. It told me exactly where it stops thinking.
 
-*Every AI agent has a contract it is supposed to follow — mine is `plan → tool → validate → respond`. We trust agents to honour that order and then never check. This is what happened when I built the tool that checks.*
+*My agent skipped its own safety check on a third of its runs. Every dashboard I owned reported 100% compliance, no errors, no exceptions. This is the measurement that caught it.*
 
 ---
 
@@ -164,23 +164,37 @@ fot counter-proof                # the naive counter beside the ordered funnel
 
 If you only want the finding, `./scripts/reproduce.sh` does the whole thing in under ten minutes — it builds both funnels, prints the working cliff, then triggers the fragmented one and shows the `500` verbatim. It exits non-zero if any claim in this post fails to reproduce on your machine.
 
-## The boundary, and one thing I got wrong
+## Where this does not work
 
 Funnels aggregate with `minIf` over a monotonic step index: first occurrence wins, order is enforced. So they are **structurally blind to loops and retries** — validated once and validated five times after four failures are the same funnel. Phoenix's agent-path graph and Datadog's execution-loop view are the loop-aware complements. Funnel the linear contract; loops want a graph. That's the ceiling, and owning it is the contribution.
 
-I committed [`PREDICTION.md`](https://github.com/wiz-abhi/funnel-of-thought) before reading a single analytics response. **One prediction missed**: I said a funnel keyed on a fragmented LLM span would read 0%. It actually reads 58.33% when the old model still has traffic — you only get 0%-then-500 once nothing matches. I left the file unedited, because a pre-registration you amend after seeing data is worth nothing.
+## What broke along the way
 
-And one failure I didn't author at all: mid-batch, my generator **hung for 34 minutes**. 64 of 120 runs done, process alive, no error, no log line — while the API it was waiting on answered in 1.4 seconds. The LLM client had no timeout.
+**I got a prediction wrong, in writing.** I committed [`PREDICTION.md`](https://github.com/wiz-abhi/funnel-of-thought/blob/main/PREDICTION.md) before reading a single analytics response, with falsification criteria for each claim. One missed: I said a funnel keyed on a fragmented LLM span would read 0%. It actually reads **58.33%** while the old model still has traffic — you only get 0%-then-500 once *nothing* matches. I left the file unedited. A pre-registration you amend after seeing the data is worth nothing.
 
+**My first funnel reported 6% and I nearly filed it as a bug.** 100 traces, correctly named spans, correct order — and almost nothing converted. The spans were instantaneous, so every step in a trace shared one timestamp, and `t2 > t1` is strict. That is why the agent's per-node work is load-bearing rather than padding.
+
+**Then the failure I didn't author at all.** Mid-batch, my generator hung for **34 minutes**. 64 of 120 runs done, process alive, no error, no log line — while the API it was waiting on was answering in 1.4 seconds. The LLM client had been built with no timeout.
 
 Which is the whole thesis arriving uninvited. Traditional services crash. Agents wait politely, skip their homework, and hand in a confident answer anyway.
 
-**The one thing to take:** watch validate-step conversion, and alert on the cliff.
+## Takeaways
 
----
+- **A counter measures presence; a funnel measures sequence.** Ordering is a property of the trace, not of the span, and aggregating per-span throws it away. No amount of extra `GROUP BY` columns gets it back.
+- **Key funnel steps on names that are identities, not descriptions.** `agent.validate` is an identity. `chat gemini-3.1-flash-lite` is a description, and it changes the day you bump a model.
+- **If you build one thing from this post:** watch validate-step conversion, and put an alert on the cliff. One gauge, one threshold — *tell me when my agent stops checking its work before it answers.*
+- Funnels are worth the potholes. Nobody else ships the primitive.
 
-**▶ [3-minute demo](https://youtu.be/N9_sCORyT2E)** · **[Live demo](https://wiz-abhi-funnel-of-thought.static.hf.space)** · **[Code](https://github.com/wiz-abhi/funnel-of-thought)**
+## AI-usage disclosure
 
-*Built for the [Agents of SigNoz](https://www.wemakedevs.org/hackathons/signoz) hackathon (Track 1: AI & Agent Observability). The repo has the agent, the `fot` CLI, the MCP server, funnel/dashboard/alert definitions, and `casting.yaml` + lock so you can re-cast the whole stack.*
+I used Claude as a coding assistant throughout — scaffolding the agent, the CLI and the MCP server, reviewing the ClickHouse and Go analysis behind the NaN diagnosis, and editing this post. Every architectural decision, both bug diagnoses, and every number stated here were made and verified by me against a live self-hosted SigNoz v0.132.2. Claims that did not survive verification were cut rather than softened.
 
-*AI disclosure: I used Claude as a coding assistant throughout — building the agent, the CLI and the MCP server, and drafting this post. Every number here was measured on my own machine against self-hosted SigNoz v0.132.2; every claim was verified before publishing, and the ones that didn't survive verification were cut.*
+The shipped tooling makes **zero LLM calls at runtime** — the funnel, the CLI, the dashboard and the alert are REST plus arithmetic. The only model in the system is the agent being observed.
+
+## Resources
+
+- **Code:** [github.com/wiz-abhi/funnel-of-thought](https://github.com/wiz-abhi/funnel-of-thought) — agent, `fot` CLI, MCP server, dashboard/alert as code, `casting.yaml` + lock
+- **Live demo:** [wiz-abhi-funnel-of-thought.static.hf.space](https://wiz-abhi-funnel-of-thought.static.hf.space)
+- **3-minute demo video:** [youtu.be/N9_sCORyT2E](https://youtu.be/N9_sCORyT2E)
+- **Upstream:** [SigNoz #12143](https://github.com/SigNoz/signoz/issues/12143) (NaN 500) · [#12220](https://github.com/SigNoz/signoz/issues/12220) + [PR #12221](https://github.com/SigNoz/signoz/pull/12221) (p50 → p99)
+- Built for the [Agents of SigNoz](https://www.wemakedevs.org/hackathons/signoz) hackathon, Track 1: AI & Agent Observability.
