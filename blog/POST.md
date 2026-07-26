@@ -104,8 +104,6 @@ Open one and it's plainly visible in the waterfall:
 
 That's the transferable idea, and it's worth stating sharply: a counter isn't a coarser answer, it's the **wrong question**. Aggregating per-span and dividing throws away the per-trace join, and no amount of extra `GROUP BY` columns gets it back — ordering is a property of the trace, not of the span.
 
-
-
 ## Three potholes
 
 Briskly, because you'll hit them too.
@@ -172,9 +170,7 @@ Funnels aggregate with `minIf` over a monotonic step index: first occurrence win
 
 **I got a prediction wrong, in writing.** I committed [`PREDICTION.md`](https://github.com/wiz-abhi/funnel-of-thought/blob/main/PREDICTION.md) before reading a single analytics response, with falsification criteria for each claim. One missed: I said a funnel keyed on a fragmented LLM span would read 0%. It actually reads **58.33%** while the old model still has traffic — you only get 0%-then-500 once *nothing* matches. I left the file unedited. A pre-registration you amend after seeing the data is worth nothing.
 
-**My first funnel reported 6% and I nearly filed it as a bug.** 100 traces, correctly named spans, correct order — and almost nothing converted. The spans were instantaneous, so every step in a trace shared one timestamp, and `t2 > t1` is strict. That is why the agent's per-node work is load-bearing rather than padding.
-
-**Then the failure I didn't author at all.** Mid-batch, my generator hung for **34 minutes**. 64 of 120 runs done, process alive, no error, no log line — while the API it was waiting on was answering in 1.4 seconds. The LLM client had been built with no timeout.
+**And the failure I didn't author at all.** Mid-batch, my generator hung for **34 minutes**. 64 of 120 runs done, process alive, no error, no log line — while the API it was waiting on was answering in 1.4 seconds. I spent the first ten minutes assuming I'd hit a rate limit. The LLM client had been built with no timeout.
 
 Which is the whole thesis arriving uninvited. Traditional services crash. Agents wait politely, skip their homework, and hand in a confident answer anyway.
 
