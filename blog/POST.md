@@ -1,17 +1,26 @@
+# I gave my AI agent a funnel over its own reasoning. It told me exactly where it stops thinking.
+
+*Every AI agent has a contract it is supposed to follow — mine is `plan → tool → validate → respond`. We trust agents to honour that order and then never check. This is what happened when I built the tool that checks.*
+
 ---
-title: "I gave my AI agent a funnel over its own reasoning. It told me exactly where it stops thinking."
-published: false
-tags: opentelemetry, observability, ai, signoz
-cover_image: https://raw.githubusercontent.com/wiz-abhi/funnel-of-thought/main/docs/media/banner.gif
----
+
+**Funnel of Thought** measures an agent's reasoning contract as a *conversion funnel* — the same primitive e-commerce uses to find where customers drop out of a checkout, pointed instead at the steps inside an agent's head. I built it over a week for the [Agents of SigNoz](https://www.wemakedevs.org/hackathons/signoz) hackathon.
+
+It is three things:
+
+- a **4-node agent** instrumented with stock OpenTelemetry, so nothing about the measurement is special-cased to my code;
+- **`fot`**, a CLI that turns [SigNoz](https://signoz.io) Trace Funnels into funnels-as-code over reasoning steps, plus a dashboard and an alert;
+- **`signoz-funnel-mcp`**, the five funnel tools SigNoz's own MCP server doesn't ship — so an agent can build and read a funnel *over itself*.
+
+Here is the finding that made it worth building.
+
+## The two numbers
 
 My agent has a validation step. It runs before the agent answers, and its whole job is to check the tool result.
 
-A dashboard told me it ran in **100% of runs**. A funnel over the same 125 traces told me **64%**.
+A dashboard told me it ran in **100% of runs**. A funnel over the same **125 traces** told me **64%**.
 
 Both queries were correct. Only one was asking the right question.
-
-![Counter says 100%, funnel says 64%](assets/meme-01-two-numbers.png)
 
 ## The contract nobody measures
 
