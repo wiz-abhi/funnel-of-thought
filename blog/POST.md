@@ -95,7 +95,6 @@ Open one and it's plainly visible in the waterfall:
 
 That's the transferable idea, and it's worth stating sharply: a counter isn't a coarser answer, it's the **wrong question**. Aggregating per-span and dividing throws away the per-trace join, and no amount of extra `GROUP BY` columns gets it back — ordering is a property of the trace, not of the span.
 
-![One trace, two readers — a counter asks "did validate exist?" (100%), a funnel asks "did it come after tool?" (64%)](assets/contract-sketch.png)
 
 ![Everything was green](assets/meme-02-everything-is-green.png)
 
