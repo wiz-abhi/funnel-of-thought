@@ -1,61 +1,62 @@
 {
+ "mode": "aligned",
  "sections": [
   {
    "n": 1,
-   "file": "audio-user/trimmed/section1.wav",
-   "duration": 37.378,
+   "file": "audio-user/final-narration.wav",
+   "duration": 36.56,
    "target": 35.0,
-   "delta": 2.378
+   "delta": 0
   },
   {
    "n": 2,
-   "file": "audio-user/trimmed/section2.wav",
-   "duration": 17.557,
+   "file": "audio-user/final-narration.wav",
+   "duration": 17.3,
    "target": 17.0,
-   "delta": 0.557
+   "delta": 0
   },
   {
    "n": 3,
-   "file": "audio-user/trimmed/section3.wav",
-   "duration": 18.344,
+   "file": "audio-user/final-narration.wav",
+   "duration": 20.12,
    "target": 20.0,
-   "delta": -1.656
+   "delta": 0
   },
   {
    "n": 4,
-   "file": "audio-user/trimmed/section4.wav",
-   "duration": 19.483,
+   "file": "audio-user/final-narration.wav",
+   "duration": 19.64,
    "target": 18.0,
-   "delta": 1.483
+   "delta": 0
   },
   {
    "n": 5,
-   "file": "audio-user/trimmed/section5.wav",
-   "duration": 27.806,
+   "file": "audio-user/final-narration.wav",
+   "duration": 25.64,
    "target": 26.0,
-   "delta": 1.806
+   "delta": 0
   },
   {
    "n": 6,
-   "file": "audio-user/trimmed/section6.wav",
-   "duration": 11.916,
+   "file": "audio-user/final-narration.wav",
+   "duration": 11.16,
    "target": 11.0,
-   "delta": 0.916
+   "delta": 0
   },
   {
    "n": 7,
-   "file": "audio-user/trimmed/section7.wav",
-   "duration": 17.743,
+   "file": "audio-user/final-narration.wav",
+   "duration": 16.14,
    "target": 18.0,
-   "delta": -0.257
+   "delta": 0
   },
   {
    "n": 8,
-   "file": "audio-user/trimmed/section8.wav",
-   "duration": 20.754,
+   "file": "audio-user/final-narration.wav",
+   "duration": 24.425,
    "target": 22.0,
-   "delta": -1.246
+   "delta": 0
   }
  ],
- "total_duration": 170.982
+ "total_duration": 170.985
 }

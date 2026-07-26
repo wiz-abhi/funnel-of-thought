@@ -15,109 +15,109 @@ Style: Main,Segoe UI Semibold,44,&H00F8F5F2,&H00F8F5F2,&H66000000,&H00000000,0,0
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
-Dialogue: 0,0:00:00.00,0:00:03.41,Strip,,0,0,0,,Hi, I'm Abhishek, and this is Funnel of Thought
-Dialogue: 1,0:00:00.00,0:00:03.41,Main,,0,0,0,,Hi, I'm Abhishek, and this is {\c&H94C24C&}Funnel of Thought{\c&HF8F5F2&}
-Dialogue: 0,0:00:03.41,0:00:06.53,Strip,,0,0,0,,— built for the Agents of SigNoz hackathon.
-Dialogue: 1,0:00:03.41,0:00:06.53,Main,,0,0,0,,— built for the Agents of {\c&H94C24C&}SigNoz{\c&HF8F5F2&} hackathon.
-Dialogue: 0,0:00:06.53,0:00:09.80,Strip,,0,0,0,,The idea: AI agents have a reasoning contract
-Dialogue: 1,0:00:06.53,0:00:09.80,Main,,0,0,0,,The idea: AI agents have a reasoning contract
-Dialogue: 0,0:00:09.80,0:00:13.06,Strip,,0,0,0,,— mine is plan, tool, validate, respond — and
-Dialogue: 1,0:00:09.80,0:00:13.06,Main,,0,0,0,,— mine is plan, tool, validate, respond — and
-Dialogue: 0,0:00:13.06,0:00:16.40,Strip,,0,0,0,,nothing today measures whether they honour it.
-Dialogue: 1,0:00:13.06,0:00:16.40,Main,,0,0,0,,nothing today measures whether they honour it.
-Dialogue: 0,0:00:16.40,0:00:20.32,Strip,,0,0,0,,So I built three things: an OpenTelemetry-instrumented
-Dialogue: 1,0:00:16.40,0:00:20.32,Main,,0,0,0,,So I built three things: an {\c&H94C24C&}OpenTelemetry-instrumented{\c&HF8F5F2&}
-Dialogue: 0,0:00:20.32,0:00:23.59,Strip,,0,0,0,,LangGraph agent; fot, a CLI that turns SigNoz
-Dialogue: 1,0:00:20.32,0:00:23.59,Main,,0,0,0,,LangGraph agent; {\c&H94C24C&}fot{\c&HF8F5F2&}, a CLI that turns {\c&H94C24C&}SigNoz{\c&HF8F5F2&}
-Dialogue: 0,0:00:23.59,0:00:27.14,Strip,,0,0,0,,Trace Funnels into funnels-as-code over reasoning
-Dialogue: 1,0:00:23.59,0:00:27.14,Main,,0,0,0,,{\c&H94C24C&}Trace Funnels{\c&HF8F5F2&} into funnels-as-code over reasoning
-Dialogue: 0,0:00:27.14,0:00:30.56,Strip,,0,0,0,,steps; and signoz-funnel-mcp — the funnel tools
-Dialogue: 1,0:00:27.14,0:00:30.56,Main,,0,0,0,,steps; and {\c&H94C24C&}signoz-funnel-mcp{\c&HF8F5F2&} — the funnel tools
-Dialogue: 0,0:00:30.56,0:00:32.95,Strip,,0,0,0,,SigNoz's MCP server doesn't ship.
-Dialogue: 1,0:00:30.56,0:00:32.95,Main,,0,0,0,,{\c&H94C24C&}SigNoz's{\c&HF8F5F2&} MCP server doesn't ship.
-Dialogue: 0,0:00:32.95,0:00:37.38,Strip,,0,0,0,,All of it runs on self-hosted SigNoz, installed with Foundry.
-Dialogue: 1,0:00:32.95,0:00:37.38,Main,,0,0,0,,All of it runs on self-hosted {\c&H94C24C&}SigNoz{\c&HF8F5F2&}, installed with Foundry.
-Dialogue: 0,0:00:37.38,0:00:41.64,Strip,,0,0,0,,My agent has a validation step. A dashboard told me it ran
-Dialogue: 1,0:00:37.38,0:00:41.64,Main,,0,0,0,,My agent has a validation step. A dashboard told me it ran
-Dialogue: 0,0:00:41.64,0:00:45.61,Strip,,0,0,0,,in one hundred percent of runs. A funnel over the same
-Dialogue: 1,0:00:41.64,0:00:45.61,Main,,0,0,0,,in {\c&H4D7AFF&}one hundred percent{\c&HF8F5F2&} of runs. A funnel over the same
-Dialogue: 0,0:00:45.61,0:00:49.94,Strip,,0,0,0,,one hundred and twenty-five traces said sixty-four percent.
-Dialogue: 1,0:00:45.61,0:00:49.94,Main,,0,0,0,,{\c&H94C24C&}one hundred and twenty-five{\c&HF8F5F2&} traces said {\c&H94C24C&}sixty-four percent{\c&HF8F5F2&}.
-Dialogue: 0,0:00:49.94,0:00:52.44,Strip,,0,0,0,,Same traces. Both queries correct.
-Dialogue: 1,0:00:49.94,0:00:52.44,Main,,0,0,0,,Same traces. Both queries correct.
-Dialogue: 0,0:00:52.44,0:00:54.94,Strip,,0,0,0,,Only one asked the right question.
-Dialogue: 1,0:00:52.44,0:00:54.94,Main,,0,0,0,,Only one asked the right question.
-Dialogue: 0,0:00:54.94,0:00:57.64,Strip,,0,0,0,,Here's the funnel, live, over the agent's
-Dialogue: 1,0:00:54.94,0:00:57.64,Main,,0,0,0,,Here's the funnel, live, over the agent's
-Dialogue: 0,0:00:57.64,0:01:00.15,Strip,,0,0,0,,reasoning. One twenty-five runs start.
-Dialogue: 1,0:00:57.64,0:01:00.15,Main,,0,0,0,,reasoning. {\c&H94C24C&}One twenty-five{\c&HF8F5F2&} runs start.
-Dialogue: 0,0:01:00.15,0:01:02.52,Strip,,0,0,0,,One twenty-five reach the tool call.
-Dialogue: 1,0:01:00.15,0:01:02.52,Main,,0,0,0,,{\c&H94C24C&}One twenty-five{\c&HF8F5F2&} reach the tool call.
-Dialogue: 0,0:01:02.52,0:01:04.70,Strip,,0,0,0,,Then the cliff: only eighty reach
-Dialogue: 1,0:01:02.52,0:01:04.70,Main,,0,0,0,,Then the cliff: only {\c&H94C24C&}eighty{\c&HF8F5F2&} reach
-Dialogue: 0,0:01:04.70,0:01:07.27,Strip,,0,0,0,,validate, in order. Sixty-four percent.
-Dialogue: 1,0:01:04.70,0:01:07.27,Main,,0,0,0,,validate, in order. {\c&H94C24C&}Sixty-four percent{\c&HF8F5F2&}.
-Dialogue: 0,0:01:07.27,0:01:10.11,Strip,,0,0,0,,And the counts are printed on every bar — a
-Dialogue: 1,0:01:07.27,0:01:10.11,Main,,0,0,0,,And the counts are printed on every bar — a
-Dialogue: 0,0:01:10.11,0:01:13.28,Strip,,0,0,0,,percentage without a denominator isn't evidence.
-Dialogue: 1,0:01:10.11,0:01:13.28,Main,,0,0,0,,percentage without a denominator isn't evidence.
-Dialogue: 0,0:01:13.28,0:01:16.98,Strip,,0,0,0,,This isn't my tool marking its own homework — here's
-Dialogue: 1,0:01:13.28,0:01:16.98,Main,,0,0,0,,This isn't my tool marking its own homework — here's
-Dialogue: 0,0:01:16.98,0:01:19.61,Strip,,0,0,0,,the same funnel inside SigNoz itself.
-Dialogue: 1,0:01:16.98,0:01:19.61,Main,,0,0,0,,the same funnel inside {\c&H94C24C&}SigNoz{\c&HF8F5F2&} itself.
-Dialogue: 0,0:01:19.61,0:01:23.38,Strip,,0,0,0,,Sixty-four percent. One twenty-five, one twenty-five,
-Dialogue: 1,0:01:19.61,0:01:23.38,Main,,0,0,0,,{\c&H94C24C&}Sixty-four percent{\c&HF8F5F2&}. {\c&H94C24C&}One twenty-five{\c&HF8F5F2&}, one twenty-five,
-Dialogue: 0,0:01:23.38,0:01:27.22,Strip,,0,0,0,,eighty, eighty. Down thirty-six percent on step three.
-Dialogue: 1,0:01:23.38,0:01:27.22,Main,,0,0,0,,{\c&H94C24C&}eighty{\c&HF8F5F2&}, {\c&H94C24C&}eighty{\c&HF8F5F2&}. Down thirty-six percent on step three.
-Dialogue: 0,0:01:27.22,0:01:30.06,Strip,,0,0,0,,Trace Funnels are a SigNoz primitive. No
-Dialogue: 1,0:01:27.22,0:01:30.06,Main,,0,0,0,,{\c&H94C24C&}Trace Funnels{\c&HF8F5F2&} are a {\c&H94C24C&}SigNoz{\c&HF8F5F2&} primitive. No
-Dialogue: 0,0:01:30.06,0:01:32.76,Strip,,0,0,0,,other observability backend ships one.
-Dialogue: 1,0:01:30.06,0:01:32.76,Main,,0,0,0,,other observability backend ships one.
-Dialogue: 0,0:01:32.76,0:01:35.78,Strip,,0,0,0,,So why did the counter say one hundred?
-Dialogue: 1,0:01:32.76,0:01:35.78,Main,,0,0,0,,So why did the counter say {\c&H4D7AFF&}one hundred{\c&HF8F5F2&}?
-Dialogue: 0,0:01:35.78,0:01:39.58,Strip,,0,0,0,,A counter only asks: did the span exist. A funnel
-Dialogue: 1,0:01:35.78,0:01:39.58,Main,,0,0,0,,A counter only asks: did the span exist. A funnel
-Dialogue: 0,0:01:39.58,0:01:42.99,Strip,,0,0,0,,asks: did it happen after the previous step.
-Dialogue: 1,0:01:39.58,0:01:42.99,Main,,0,0,0,,asks: did it happen {\c&H4D7AFF&}after{\c&HF8F5F2&} the previous step.
-Dialogue: 0,0:01:42.99,0:01:46.32,Strip,,0,0,0,,Forty-five runs emitted their validate span
-Dialogue: 1,0:01:42.99,0:01:46.32,Main,,0,0,0,,{\c&H4D7AFF&}Forty-five{\c&HF8F5F2&} runs emitted their validate span
-Dialogue: 0,0:01:46.32,0:01:49.57,Strip,,0,0,0,,before the tool result existed — the agent
-Dialogue: 1,0:01:46.32,0:01:49.57,Main,,0,0,0,,{\c&H4D7AFF&}before{\c&HF8F5F2&} the tool result existed — the agent
-Dialogue: 0,0:01:49.57,0:01:52.98,Strip,,0,0,0,,validated an answer that hadn't arrived yet.
-Dialogue: 1,0:01:49.57,0:01:52.98,Main,,0,0,0,,validated an answer that hadn't arrived yet.
-Dialogue: 0,0:01:52.98,0:01:56.54,Strip,,0,0,0,,A counter measures presence. A funnel measures
-Dialogue: 1,0:01:52.98,0:01:56.54,Main,,0,0,0,,A counter measures {\c&H4D7AFF&}presence{\c&HF8F5F2&}. A funnel measures
-Dialogue: 0,0:01:56.54,0:02:00.57,Strip,,0,0,0,,sequence. Ordering lives in the trace, not the span.
-Dialogue: 1,0:01:56.54,0:02:00.57,Main,,0,0,0,,{\c&H4D7AFF&}sequence{\c&HF8F5F2&}. Ordering lives in the trace, not the span.
-Dialogue: 0,0:02:00.57,0:02:04.33,Strip,,0,0,0,,Here's one of those runs. Plan — then validate,
-Dialogue: 1,0:02:00.57,0:02:04.33,Main,,0,0,0,,Here's one of those runs. Plan — then validate,
-Dialogue: 0,0:02:04.33,0:02:07.29,Strip,,0,0,0,,in red — and only then the tool call.
-Dialogue: 1,0:02:04.33,0:02:07.29,Main,,0,0,0,,in red — and only then the tool call.
-Dialogue: 0,0:02:07.29,0:02:09.93,Strip,,0,0,0,,It finished validating before the
-Dialogue: 1,0:02:07.29,0:02:09.93,Main,,0,0,0,,It finished validating {\c&H4D7AFF&}before{\c&HF8F5F2&} the
-Dialogue: 0,0:02:09.93,0:02:12.49,Strip,,0,0,0,,thing it was validating existed.
-Dialogue: 1,0:02:09.93,0:02:12.49,Main,,0,0,0,,thing it was validating existed.
-Dialogue: 0,0:02:12.49,0:02:15.70,Strip,,0,0,0,,None of SigNoz's forty-one MCP tools reach
-Dialogue: 1,0:02:12.49,0:02:15.70,Main,,0,0,0,,None of {\c&H94C24C&}SigNoz's{\c&HF8F5F2&} forty-one MCP tools reach
-Dialogue: 0,0:02:15.70,0:02:18.68,Strip,,0,0,0,,funnels, so I shipped the missing ones.
-Dialogue: 1,0:02:15.70,0:02:18.68,Main,,0,0,0,,funnels, so I shipped the missing ones.
-Dialogue: 0,0:02:18.68,0:02:21.89,Strip,,0,0,0,,Here, the agent calls get-funnel-analytics
-Dialogue: 1,0:02:18.68,0:02:21.89,Main,,0,0,0,,Here, the agent calls get-funnel-analytics
-Dialogue: 0,0:02:21.89,0:02:24.49,Strip,,0,0,0,,and reads its own conversion rate.
-Dialogue: 1,0:02:21.89,0:02:24.49,Main,,0,0,0,,and reads its own conversion rate.
-Dialogue: 0,0:02:24.49,0:02:27.48,Strip,,0,0,0,,The read path has no model in it — it's
-Dialogue: 1,0:02:24.49,0:02:27.48,Main,,0,0,0,,The read path has no model in it — it's
-Dialogue: 0,0:02:27.48,0:02:30.23,Strip,,0,0,0,,sub-second, deterministic, and free.
-Dialogue: 1,0:02:27.48,0:02:30.23,Main,,0,0,0,,sub-second, deterministic, and free.
-Dialogue: 0,0:02:30.23,0:02:33.58,Strip,,0,0,0,,What did I learn? Funnels need strictly increasing
-Dialogue: 1,0:02:30.23,0:02:33.58,Main,,0,0,0,,What did I learn? Funnels need strictly increasing
-Dialogue: 0,0:02:33.58,0:02:37.46,Strip,,0,0,0,,timestamps. Two correct specs can be silently incompatible
-Dialogue: 1,0:02:33.58,0:02:37.46,Main,,0,0,0,,timestamps. Two correct specs can be silently incompatible
-Dialogue: 0,0:02:37.46,0:02:41.41,Strip,,0,0,0,,— that finding is now two SigNoz issues and a pull request.
-Dialogue: 1,0:02:37.46,0:02:41.41,Main,,0,0,0,,— that finding is now two {\c&H94C24C&}SigNoz{\c&HF8F5F2&} issues and a pull request.
-Dialogue: 0,0:02:41.41,0:02:45.36,Strip,,0,0,0,,And agents fail politely: no errors, just skipped homework.
-Dialogue: 1,0:02:41.41,0:02:45.36,Main,,0,0,0,,And agents fail politely: no errors, just skipped homework.
-Dialogue: 0,0:02:45.36,0:02:48.37,Strip,,0,0,0,,So: watch validate-step conversion, and alert
-Dialogue: 1,0:02:45.36,0:02:48.37,Main,,0,0,0,,So: watch validate-step conversion, and alert
-Dialogue: 0,0:02:48.37,0:02:50.98,Strip,,0,0,0,,on the cliff. Mine is firing right now.
-Dialogue: 1,0:02:48.37,0:02:50.98,Main,,0,0,0,,on the cliff. Mine is firing right now.
+Dialogue: 0,0:00:00.00,0:00:02.84,Strip,,0,0,0,,Hi, I'm Abhishek, and this is Funnel of Thought
+Dialogue: 1,0:00:00.00,0:00:02.84,Main,,0,0,0,,Hi, I'm Abhishek, and this is {\c&H94C24C&}Funnel of Thought{\c&HF8F5F2&}
+Dialogue: 0,0:00:03.14,0:00:05.04,Strip,,0,0,0,,— built for the Agents of SigNoz hackathon.
+Dialogue: 1,0:00:03.14,0:00:05.04,Main,,0,0,0,,— built for the Agents of {\c&H94C24C&}SigNoz{\c&HF8F5F2&} hackathon.
+Dialogue: 0,0:00:05.50,0:00:08.76,Strip,,0,0,0,,The idea: AI agents have a reasoning contract
+Dialogue: 1,0:00:05.50,0:00:08.76,Main,,0,0,0,,The idea: AI agents have a reasoning contract
+Dialogue: 0,0:00:09.30,0:00:12.02,Strip,,0,0,0,,— mine is plan, tool, validate, respond — and
+Dialogue: 1,0:00:09.30,0:00:12.02,Main,,0,0,0,,— mine is plan, tool, validate, respond — and
+Dialogue: 0,0:00:12.04,0:00:14.44,Strip,,0,0,0,,nothing today measures whether they honour it.
+Dialogue: 1,0:00:12.04,0:00:14.44,Main,,0,0,0,,nothing today measures whether they honour it.
+Dialogue: 0,0:00:14.74,0:00:17.25,Strip,,0,0,0,,So I built three things: an OpenTelemetry-instrumented
+Dialogue: 1,0:00:14.74,0:00:17.25,Main,,0,0,0,,So I built three things: an {\c&H94C24C&}OpenTelemetry-instrumented{\c&HF8F5F2&}
+Dialogue: 0,0:00:17.27,0:00:21.93,Strip,,0,0,0,,LangGraph agent; fot, a CLI that turns SigNoz
+Dialogue: 1,0:00:17.27,0:00:21.93,Main,,0,0,0,,LangGraph agent; {\c&H94C24C&}fot{\c&HF8F5F2&}, a CLI that turns {\c&H94C24C&}SigNoz{\c&HF8F5F2&}
+Dialogue: 0,0:00:21.95,0:00:24.18,Strip,,0,0,0,,Trace Funnels into funnels-as-code over reasoning
+Dialogue: 1,0:00:21.95,0:00:24.18,Main,,0,0,0,,{\c&H94C24C&}Trace Funnels{\c&HF8F5F2&} into funnels-as-code over reasoning
+Dialogue: 0,0:00:24.20,0:00:28.54,Strip,,0,0,0,,steps; and signoz-funnel-mcp — the funnel tools
+Dialogue: 1,0:00:24.20,0:00:28.54,Main,,0,0,0,,steps; and {\c&H94C24C&}signoz-funnel-mcp{\c&HF8F5F2&} — the funnel tools
+Dialogue: 0,0:00:28.85,0:00:31.68,Strip,,0,0,0,,SigNoz's MCP server doesn't ship.
+Dialogue: 1,0:00:28.85,0:00:31.68,Main,,0,0,0,,{\c&H94C24C&}SigNoz's{\c&HF8F5F2&} MCP server doesn't ship.
+Dialogue: 0,0:00:31.70,0:00:35.88,Strip,,0,0,0,,All of it runs on self-hosted SigNoz, installed with Foundry.
+Dialogue: 1,0:00:31.70,0:00:35.88,Main,,0,0,0,,All of it runs on self-hosted {\c&H94C24C&}SigNoz{\c&HF8F5F2&}, installed with Foundry.
+Dialogue: 0,0:00:36.56,0:00:41.44,Strip,,0,0,0,,My agent has a validation step. A dashboard told me it ran
+Dialogue: 1,0:00:36.56,0:00:41.44,Main,,0,0,0,,My agent has a validation step. A dashboard told me it ran
+Dialogue: 0,0:00:41.46,0:00:44.70,Strip,,0,0,0,,in one hundred percent of runs. A funnel over the same
+Dialogue: 1,0:00:41.46,0:00:44.70,Main,,0,0,0,,in {\c&H4D7AFF&}one hundred percent{\c&HF8F5F2&} of runs. A funnel over the same
+Dialogue: 0,0:00:44.72,0:00:48.84,Strip,,0,0,0,,one hundred and twenty-five traces said sixty-four percent.
+Dialogue: 1,0:00:44.72,0:00:48.84,Main,,0,0,0,,{\c&H94C24C&}one hundred and twenty-five{\c&HF8F5F2&} traces said {\c&H94C24C&}sixty-four percent{\c&HF8F5F2&}.
+Dialogue: 0,0:00:48.86,0:00:51.78,Strip,,0,0,0,,Same traces. Both queries correct.
+Dialogue: 1,0:00:48.86,0:00:51.78,Main,,0,0,0,,Same traces. Both queries correct.
+Dialogue: 0,0:00:52.20,0:00:53.68,Strip,,0,0,0,,Only one asked the right question.
+Dialogue: 1,0:00:52.20,0:00:53.68,Main,,0,0,0,,Only one asked the right question.
+Dialogue: 0,0:00:53.86,0:00:56.02,Strip,,0,0,0,,Here's the funnel, live, over the agent's
+Dialogue: 1,0:00:53.86,0:00:56.02,Main,,0,0,0,,Here's the funnel, live, over the agent's
+Dialogue: 0,0:00:56.04,0:00:58.40,Strip,,0,0,0,,reasoning. One twenty-five runs start.
+Dialogue: 1,0:00:56.04,0:00:58.40,Main,,0,0,0,,reasoning. {\c&H94C24C&}One twenty-five{\c&HF8F5F2&} runs start.
+Dialogue: 0,0:00:59.04,0:01:01.10,Strip,,0,0,0,,One twenty-five reach the tool call.
+Dialogue: 1,0:00:59.04,0:01:01.10,Main,,0,0,0,,{\c&H94C24C&}One twenty-five{\c&HF8F5F2&} reach the tool call.
+Dialogue: 0,0:01:01.36,0:01:03.62,Strip,,0,0,0,,Then the cliff: only eighty reach
+Dialogue: 1,0:01:01.36,0:01:03.62,Main,,0,0,0,,Then the cliff: only {\c&H94C24C&}eighty{\c&HF8F5F2&} reach
+Dialogue: 0,0:01:03.64,0:01:06.24,Strip,,0,0,0,,validate, in order. Sixty-four percent.
+Dialogue: 1,0:01:03.64,0:01:06.24,Main,,0,0,0,,validate, in order. {\c&H94C24C&}Sixty-four percent{\c&HF8F5F2&}.
+Dialogue: 0,0:01:06.69,0:01:09.68,Strip,,0,0,0,,And the counts are printed on every bar — a
+Dialogue: 1,0:01:06.69,0:01:09.68,Main,,0,0,0,,And the counts are printed on every bar — a
+Dialogue: 0,0:01:09.70,0:01:12.76,Strip,,0,0,0,,percentage without a denominator isn't evidence.
+Dialogue: 1,0:01:09.70,0:01:12.76,Main,,0,0,0,,percentage without a denominator isn't evidence.
+Dialogue: 0,0:01:13.98,0:01:17.18,Strip,,0,0,0,,This isn't my tool marking its own homework — here's
+Dialogue: 1,0:01:13.98,0:01:17.18,Main,,0,0,0,,This isn't my tool marking its own homework — here's
+Dialogue: 0,0:01:17.20,0:01:19.20,Strip,,0,0,0,,the same funnel inside SigNoz itself.
+Dialogue: 1,0:01:17.20,0:01:19.20,Main,,0,0,0,,the same funnel inside {\c&H94C24C&}SigNoz{\c&HF8F5F2&} itself.
+Dialogue: 0,0:01:20.07,0:01:23.14,Strip,,0,0,0,,Sixty-four percent. One twenty-five, one twenty-five,
+Dialogue: 1,0:01:20.07,0:01:23.14,Main,,0,0,0,,{\c&H94C24C&}Sixty-four percent{\c&HF8F5F2&}. {\c&H94C24C&}One twenty-five{\c&HF8F5F2&}, one twenty-five,
+Dialogue: 0,0:01:23.16,0:01:27.14,Strip,,0,0,0,,eighty, eighty. Down thirty-six percent on step three.
+Dialogue: 1,0:01:23.16,0:01:27.14,Main,,0,0,0,,{\c&H94C24C&}eighty{\c&HF8F5F2&}, {\c&H94C24C&}eighty{\c&HF8F5F2&}. Down thirty-six percent on step three.
+Dialogue: 0,0:01:28.00,0:01:29.98,Strip,,0,0,0,,Trace Funnels are a SigNoz primitive. No
+Dialogue: 1,0:01:28.00,0:01:29.98,Main,,0,0,0,,{\c&H94C24C&}Trace Funnels{\c&HF8F5F2&} are a {\c&H94C24C&}SigNoz{\c&HF8F5F2&} primitive. No
+Dialogue: 0,0:01:30.00,0:01:32.46,Strip,,0,0,0,,other observability backend ships one.
+Dialogue: 1,0:01:30.00,0:01:32.46,Main,,0,0,0,,other observability backend ships one.
+Dialogue: 0,0:01:33.62,0:01:35.74,Strip,,0,0,0,,So why did the counter say one hundred?
+Dialogue: 1,0:01:33.62,0:01:35.74,Main,,0,0,0,,So why did the counter say {\c&H4D7AFF&}one hundred{\c&HF8F5F2&}?
+Dialogue: 0,0:01:35.76,0:01:39.56,Strip,,0,0,0,,A counter only asks: did the span exist. A funnel
+Dialogue: 1,0:01:35.76,0:01:39.56,Main,,0,0,0,,A counter only asks: did the span exist. A funnel
+Dialogue: 0,0:01:39.80,0:01:42.32,Strip,,0,0,0,,asks: did it happen after the previous step.
+Dialogue: 1,0:01:39.80,0:01:42.32,Main,,0,0,0,,asks: did it happen {\c&H4D7AFF&}after{\c&HF8F5F2&} the previous step.
+Dialogue: 0,0:01:42.82,0:01:45.12,Strip,,0,0,0,,Forty-five runs emitted their validate span
+Dialogue: 1,0:01:42.82,0:01:45.12,Main,,0,0,0,,{\c&H4D7AFF&}Forty-five{\c&HF8F5F2&} runs emitted their validate span
+Dialogue: 0,0:01:45.14,0:01:48.36,Strip,,0,0,0,,before the tool result existed — the agent
+Dialogue: 1,0:01:45.14,0:01:48.36,Main,,0,0,0,,{\c&H4D7AFF&}before{\c&HF8F5F2&} the tool result existed — the agent
+Dialogue: 0,0:01:48.38,0:01:51.68,Strip,,0,0,0,,validated an answer that hadn't arrived yet.
+Dialogue: 1,0:01:48.38,0:01:51.68,Main,,0,0,0,,validated an answer that hadn't arrived yet.
+Dialogue: 0,0:01:51.96,0:01:54.68,Strip,,0,0,0,,A counter measures presence. A funnel measures
+Dialogue: 1,0:01:51.96,0:01:54.68,Main,,0,0,0,,A counter measures {\c&H4D7AFF&}presence{\c&HF8F5F2&}. A funnel measures
+Dialogue: 0,0:01:54.70,0:01:58.50,Strip,,0,0,0,,sequence. Ordering lives in the trace, not the span.
+Dialogue: 1,0:01:54.70,0:01:58.50,Main,,0,0,0,,{\c&H4D7AFF&}sequence{\c&HF8F5F2&}. Ordering lives in the trace, not the span.
+Dialogue: 0,0:01:59.26,0:02:02.02,Strip,,0,0,0,,Here's one of those runs. Plan — then validate,
+Dialogue: 1,0:01:59.26,0:02:02.02,Main,,0,0,0,,Here's one of those runs. Plan — then validate,
+Dialogue: 0,0:02:02.04,0:02:05.42,Strip,,0,0,0,,in red — and only then the tool call.
+Dialogue: 1,0:02:02.04,0:02:05.42,Main,,0,0,0,,in red — and only then the tool call.
+Dialogue: 0,0:02:05.78,0:02:07.38,Strip,,0,0,0,,It finished validating before the
+Dialogue: 1,0:02:05.78,0:02:07.38,Main,,0,0,0,,It finished validating {\c&H4D7AFF&}before{\c&HF8F5F2&} the
+Dialogue: 0,0:02:07.40,0:02:09.58,Strip,,0,0,0,,thing it was validating existed.
+Dialogue: 1,0:02:07.40,0:02:09.58,Main,,0,0,0,,thing it was validating existed.
+Dialogue: 0,0:02:10.42,0:02:12.68,Strip,,0,0,0,,None of SigNoz's forty-one MCP tools reach
+Dialogue: 1,0:02:10.42,0:02:12.68,Main,,0,0,0,,None of {\c&H94C24C&}SigNoz's{\c&HF8F5F2&} forty-one MCP tools reach
+Dialogue: 0,0:02:12.70,0:02:14.92,Strip,,0,0,0,,funnels, so I shipped the missing ones.
+Dialogue: 1,0:02:12.70,0:02:14.92,Main,,0,0,0,,funnels, so I shipped the missing ones.
+Dialogue: 0,0:02:15.16,0:02:18.08,Strip,,0,0,0,,Here, the agent calls get-funnel-analytics
+Dialogue: 1,0:02:15.16,0:02:18.08,Main,,0,0,0,,Here, the agent calls get-funnel-analytics
+Dialogue: 0,0:02:18.10,0:02:20.10,Strip,,0,0,0,,and reads its own conversion rate.
+Dialogue: 1,0:02:18.10,0:02:20.10,Main,,0,0,0,,and reads its own conversion rate.
+Dialogue: 0,0:02:20.60,0:02:23.24,Strip,,0,0,0,,The read path has no model in it — it's
+Dialogue: 1,0:02:20.60,0:02:23.24,Main,,0,0,0,,The read path has no model in it — it's
+Dialogue: 0,0:02:23.70,0:02:25.46,Strip,,0,0,0,,sub-second, deterministic, and free.
+Dialogue: 1,0:02:23.70,0:02:25.46,Main,,0,0,0,,sub-second, deterministic, and free.
+Dialogue: 0,0:02:26.56,0:02:29.50,Strip,,0,0,0,,What did I learn? Funnels need strictly increasing
+Dialogue: 1,0:02:26.56,0:02:29.50,Main,,0,0,0,,What did I learn? Funnels need strictly increasing
+Dialogue: 0,0:02:29.52,0:02:33.48,Strip,,0,0,0,,timestamps. Two correct specs can be silently incompatible
+Dialogue: 1,0:02:29.52,0:02:33.48,Main,,0,0,0,,timestamps. Two correct specs can be silently incompatible
+Dialogue: 0,0:02:34.08,0:02:39.94,Strip,,0,0,0,,— that finding is now two SigNoz issues and a pull request.
+Dialogue: 1,0:02:34.08,0:02:39.94,Main,,0,0,0,,— that finding is now two {\c&H94C24C&}SigNoz{\c&HF8F5F2&} issues and a pull request.
+Dialogue: 0,0:02:39.96,0:02:43.82,Strip,,0,0,0,,And agents fail politely: no errors, just skipped homework.
+Dialogue: 1,0:02:39.96,0:02:43.82,Main,,0,0,0,,And agents fail politely: no errors, just skipped homework.
+Dialogue: 0,0:02:43.84,0:02:47.70,Strip,,0,0,0,,So: watch validate-step conversion, and alert
+Dialogue: 1,0:02:43.84,0:02:47.70,Main,,0,0,0,,So: watch validate-step conversion, and alert
+Dialogue: 0,0:02:47.72,0:02:50.36,Strip,,0,0,0,,on the cliff. Mine is firing right now.
+Dialogue: 1,0:02:47.72,0:02:50.36,Main,,0,0,0,,on the cliff. Mine is firing right now.

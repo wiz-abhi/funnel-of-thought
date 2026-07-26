@@ -30,11 +30,14 @@
 .pytest_cache/
 .ruff_cache/
 .signoz-token
+.venv-asr/
 .venv/
 .vscode/
 Thumbs.db
 __pycache__/
 blog/video/audio-user/*.orig.wav
+blog/video/audio-user/final-narration.wav
+blog/video/audio-user/narration.wav
 blog/video/audio-user/raw-take.*
 blog/video/build/
 blog/video/frames/
