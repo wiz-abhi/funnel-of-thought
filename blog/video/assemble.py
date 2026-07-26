@@ -40,19 +40,28 @@ W, H, FPS = 1920, 1080, 30
 WARN_S = 2 * 60 + 55                 # 175 -> warn
 FAIL_S = 2 * 60 + 59                 # 179 -> hard fail
 
-# section -> visual source (v2 mapping). §1-2 are stills; §3-8 are live
-# captures. Stills are a sequence: each gets an equal share of the section.
+# section -> visual source (v3 mapping).
+#
+# The split is deliberate: **hand-drawn sketch animation carries the
+# explanation, real captured footage carries the evidence.** A judge should
+# never be shown a drawing where a real terminal or a real SigNoz page could
+# make the same point.
+#
+#   "seq" = an ordered mix of stills (.png) and clips (.mp4), each taking the
+#   given fraction of the section's duration (fractions must sum to 1.0).
 PLAN: dict[int, dict] = {
-    1: {"stills": [CARDS / "title.png",
-                   ASSETS / "diagram-01-contract.png",
-                   CARDS / "ships.png",
-                   ASSETS / "diagram-04-architecture.png"]},
-    2: {"stills": [ASSETS / "meme-01-two-numbers.png"]},
-    3: {"video": SEG / "shot3.mp4"},
-    4: {"video": SEG / "shot4.mp4"},
-    5: {"video": SEG / "shot5.mp4"},
-    6: {"video": SEG / "shot6.mp4"},
-    7: {"video": SEG / "shot7.mp4"},
+    # intro: title card -> the contract sketching itself -> what it ships
+    1: {"seq": [(CARDS / "title.png", 0.13),
+                (SEG / "intro-sketch.mp4", 0.62),
+                (CARDS / "ships.png", 0.25)]},
+    # the two numbers, shown as the real counter-proof output
+    2: {"video": SEG / "shot5.mp4"},
+    3: {"video": SEG / "shot3.mp4"},          # fot show — the cliff
+    4: {"video": SEG / "shot4.mp4"},          # SigNoz's own Funnels UI
+    # why a counter can't see it: explanation, so the sketch earns its place
+    5: {"video": SEG / "counter-sketch.mp4"},
+    6: {"video": SEG / "shot6.mp4"},          # the violating trace waterfall
+    7: {"video": SEG / "shot7.mp4"},          # the agent reads its own funnel
     8: {"video": SEG / "shot8.mp4", "tail_still": CARDS / "end.png", "tail": 3.5},
 }
 
@@ -90,11 +99,15 @@ def still_to_clip(img: Path, seconds: float, dst: Path) -> None:
     ~110px clean band at the bottom that the caption strip (MarginV=56 in real
     pixels, ~74px tall) lands inside. Video segments keep their native
     letterbox.
+
+    The pad colour must track the card theme: the cards are #08090C, and
+    padding them with the old flat #0f1720 framed each one in a visibly
+    lighter blue-grey bar.
     """
     run([
         "ffmpeg", "-y", "-loop", "1", "-t", f"{seconds:.3f}", "-i", str(img),
         "-vf", f"scale={W}:{H - 140}:force_original_aspect_ratio=decrease,"
-               f"pad={W}:{H}:(ow-iw)/2:30:color=#0f1720,fps={FPS},format=yuv420p",
+               f"pad={W}:{H}:(ow-iw)/2:30:color=#08090C,fps={FPS},format=yuv420p",
         "-c:v", "libx264", "-preset", "medium", "-crf", "18", str(dst),
     ])
 
@@ -128,7 +141,7 @@ def main() -> None:
         for key in ("video", "tail_still"):
             if key in spec and not spec[key].exists():
                 missing.append(str(spec[key]))
-        for s in spec.get("stills", []):
+        for s in [p for p,_ in spec.get("seq", [])] + spec.get("stills", []):
             if not s.exists():
                 missing.append(str(s))
 
@@ -157,7 +170,17 @@ def main() -> None:
     for n in sorted(PLAN):
         spec = PLAN[n]
         seconds = float(by_n[n]["duration"])
-        if "stills" in spec:
+        if "seq" in spec:
+            # ordered mix of stills and clips, each taking its fraction
+            for i, (src, frac) in enumerate(spec["seq"]):
+                dst = BUILD / f"s{n}_{i}.mp4"
+                slot = seconds * float(frac)
+                if src.suffix.lower() == ".png":
+                    still_to_clip(src, slot, dst)
+                else:
+                    conform(src, slot, dst)
+                parts.append(dst)
+        elif "stills" in spec:
             share = seconds / len(spec["stills"])
             for i, img in enumerate(spec["stills"]):
                 dst = BUILD / f"s{n}_{i}.mp4"
