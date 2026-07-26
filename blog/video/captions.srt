@@ -1,189 +1,211 @@
 1
-00:00:00,000 --> 00:00:05,028
-Hi, I'm Abhishek, and this is Funnel of
-Thought — built for the Agents of SigNoz
+00:00:00,000 --> 00:00:03,172
+Hi, I'm Abhishek, and this is Funnel of Thought
 
 2
-00:00:05,028 --> 00:00:07,028
-hackathon.
+00:00:03,172 --> 00:00:06,074
+— built for the Agents of SigNoz hackathon.
 
 3
-00:00:07,028 --> 00:00:11,854
-The idea: AI agents have a reasoning
-contract — mine is plan, tool, validate,
+00:00:06,074 --> 00:00:09,111
+The idea: AI agents have a reasoning contract
 
 4
-00:00:11,854 --> 00:00:15,538
-respond — and nothing today measures
-whether they honour it.
+00:00:09,111 --> 00:00:12,149
+— mine is plan, tool, validate, respond — and
 
 5
-00:00:15,538 --> 00:00:19,490
-So I built three things: an
-OpenTelemetry-instrumented LangGraph
+00:00:12,149 --> 00:00:15,253
+nothing today measures whether they honour it.
 
 6
-00:00:19,490 --> 00:00:24,182
-agent; fot, a CLI that turns SigNoz Trace
-Funnels into funnels-as-code over
+00:00:15,253 --> 00:00:18,898
+So I built three things: an OpenTelemetry-instrumented
 
 7
-00:00:24,182 --> 00:00:29,008
-reasoning steps; and signoz-funnel-mcp —
-the funnel tools SigNoz's MCP server
+00:00:18,898 --> 00:00:21,935
+LangGraph agent; fot, a CLI that turns SigNoz
 
 8
-00:00:29,008 --> 00:00:31,008
-doesn't ship.
+00:00:21,935 --> 00:00:25,242
+Trace Funnels into funnels-as-code over reasoning
 
 9
-00:00:31,008 --> 00:00:34,759
-All of it runs on self-hosted SigNoz,
-installed with Foundry.
+00:00:25,242 --> 00:00:28,414
+steps; and signoz-funnel-mcp — the funnel tools
 
 10
-00:00:34,759 --> 00:00:39,837
-My agent has a validation step. A
-dashboard told me it ran in one hundred
+00:00:28,414 --> 00:00:30,642
+SigNoz's MCP server doesn't ship.
 
 11
-00:00:39,837 --> 00:00:45,349
-percent of runs. A funnel over the same
-one hundred and twenty-five traces said
+00:00:30,642 --> 00:00:34,759
+All of it runs on self-hosted SigNoz, installed with Foundry.
 
 12
-00:00:45,349 --> 00:00:47,349
-sixty-four percent.
+00:00:34,759 --> 00:00:38,976
+My agent has a validation step. A dashboard told me it ran
 
 13
-00:00:47,349 --> 00:00:52,138
-Same traces. Both queries correct. Only
-one asked the right question.
+00:00:38,976 --> 00:00:42,903
+in one hundred percent of runs. A funnel over the same
 
 14
-00:00:52,138 --> 00:00:57,300
-Here's the funnel, live, over the agent's
-reasoning. One twenty-five runs start. One
+00:00:42,903 --> 00:00:47,193
+one hundred and twenty-five traces said sixty-four percent.
 
 15
-00:00:57,300 --> 00:00:59,300
-twenty-five reach the tool call.
+00:00:47,193 --> 00:00:49,666
+Same traces. Both queries correct.
 
 16
-00:00:59,300 --> 00:01:03,730
-Then the cliff: only eighty reach
-validate, in order. Sixty-four percent.
+00:00:49,666 --> 00:00:52,138
+Only one asked the right question.
 
 17
-00:01:03,730 --> 00:01:08,759
-And the counts are printed on every bar —
-a percentage without a denominator isn't
+00:00:52,138 --> 00:00:54,884
+Here's the funnel, live, over the agent's
 
 18
-00:01:08,759 --> 00:01:10,759
-evidence.
+00:00:54,884 --> 00:00:57,429
+reasoning. One twenty-five runs start.
 
 19
-00:01:10,759 --> 00:01:15,481
-This isn't my tool marking its own
-homework — here's the same funnel inside
+00:00:57,429 --> 00:00:59,841
+One twenty-five reach the tool call.
 
 20
-00:01:15,481 --> 00:01:20,267
-SigNoz itself. Sixty-four percent. One
-twenty-five, one twenty-five, eighty,
+00:00:59,841 --> 00:01:02,051
+Then the cliff: only eighty reach
 
 21
-00:01:20,267 --> 00:01:23,163
-eighty. Down thirty-six percent on step
-three.
+00:01:02,051 --> 00:01:04,663
+validate, in order. Sixty-four percent.
 
 22
-00:01:23,163 --> 00:01:28,138
-Trace Funnels are a SigNoz primitive. No
-other observability backend ships one.
+00:01:04,663 --> 00:01:07,544
+And the counts are printed on every bar — a
 
 23
-00:01:28,138 --> 00:01:30,654
-So why did the counter say one hundred?
+00:01:07,544 --> 00:01:10,759
+percentage without a denominator isn't evidence.
 
 24
-00:01:30,654 --> 00:01:36,068
-A counter only asks: did the span exist. A
-funnel asks: did it happen after the
+00:01:10,759 --> 00:01:14,057
+This isn't my tool marking its own homework — here's
 
 25
-00:01:36,068 --> 00:01:38,068
-previous step.
+00:01:14,057 --> 00:01:16,404
+the same funnel inside SigNoz itself.
 
 26
-00:01:38,068 --> 00:01:43,553
-Forty-five runs emitted their validate
-span before the tool result existed — the
+00:01:16,404 --> 00:01:19,765
+Sixty-four percent. One twenty-five, one twenty-five,
 
 27
-00:01:43,553 --> 00:01:46,866
-agent validated an answer that hadn't
-arrived yet.
+00:01:19,765 --> 00:01:23,191
+eighty, eighty. Down thirty-six percent on step three.
 
 28
-00:01:46,866 --> 00:01:52,207
-A counter measures presence. A funnel
-measures sequence. Ordering lives in the
+00:01:23,191 --> 00:01:25,728
+Trace Funnels are a SigNoz primitive. No
 
 29
-00:01:52,207 --> 00:01:54,207
-trace, not the span.
+00:01:25,728 --> 00:01:28,138
+other observability backend ships one.
 
 30
-00:01:54,207 --> 00:01:59,451
-Here's one of those runs. Plan — then
-validate, in red — and only then the tool
+00:01:28,138 --> 00:01:30,970
+So why did the counter say one hundred?
 
 31
-00:01:59,451 --> 00:02:01,451
-call.
+00:01:30,970 --> 00:01:34,528
+A counter only asks: did the span exist. A funnel
 
 32
-00:02:01,451 --> 00:02:05,793
-It finished validating before the thing it
-was validating existed.
+00:01:34,528 --> 00:01:37,723
+asks: did it happen after the previous step.
 
 33
-00:02:05,793 --> 00:02:11,424
-None of SigNoz's forty-one MCP tools reach
-funnels, so I shipped the missing ones.
+00:01:37,723 --> 00:01:40,846
+Forty-five runs emitted their validate span
 
 34
-00:02:11,424 --> 00:02:16,712
-Here, the agent calls get-funnel-analytics
-and reads its own conversion rate.
+00:01:40,846 --> 00:01:43,895
+before the tool result existed — the agent
 
 35
-00:02:16,712 --> 00:02:21,931
-The read path has no model in it — it's
-sub-second, deterministic, and free.
+00:01:43,895 --> 00:01:47,091
+validated an answer that hadn't arrived yet.
 
 36
-00:02:21,931 --> 00:02:26,927
-What did I learn? Funnels need strictly
-increasing timestamps. Two correct specs
+00:01:47,091 --> 00:01:50,431
+A counter measures presence. A funnel measures
 
 37
-00:02:26,927 --> 00:02:31,517
-can be silently incompatible — that
-finding is now two SigNoz issues and a
+00:01:50,431 --> 00:01:54,207
+sequence. Ordering lives in the trace, not the span.
 
 38
-00:02:31,517 --> 00:02:36,038
-pull request. And agents fail politely: no
-errors, just skipped homework.
+00:01:54,207 --> 00:01:57,862
+Here's one of those runs. Plan — then validate,
 
 39
-00:02:36,038 --> 00:02:41,034
-So: watch validate-step conversion, and
-alert on the cliff. Mine is firing right
+00:01:57,862 --> 00:02:00,739
+in red — and only then the tool call.
 
 40
-00:02:41,034 --> 00:02:43,034
-now.
+00:02:00,739 --> 00:02:03,305
+It finished validating before the
+
+41
+00:02:03,305 --> 00:02:05,793
+thing it was validating existed.
+
+42
+00:02:05,793 --> 00:02:08,715
+None of SigNoz's forty-one MCP tools reach
+
+43
+00:02:08,715 --> 00:02:11,427
+funnels, so I shipped the missing ones.
+
+44
+00:02:11,427 --> 00:02:14,349
+Here, the agent calls get-funnel-analytics
+
+45
+00:02:14,349 --> 00:02:16,714
+and reads its own conversion rate.
+
+46
+00:02:16,714 --> 00:02:19,427
+The read path has no model in it — it's
+
+47
+00:02:19,427 --> 00:02:21,931
+sub-second, deterministic, and free.
+
+48
+00:02:21,931 --> 00:02:25,335
+What did I learn? Funnels need strictly increasing
+
+49
+00:02:25,335 --> 00:02:29,283
+timestamps. Two correct specs can be silently incompatible
+
+50
+00:02:29,283 --> 00:02:33,300
+— that finding is now two SigNoz issues and a pull request.
+
+51
+00:02:33,300 --> 00:02:37,316
+And agents fail politely: no errors, just skipped homework.
+
+52
+00:02:37,316 --> 00:02:40,380
+So: watch validate-step conversion, and alert
+
+53
+00:02:40,380 --> 00:02:43,034
+on the cliff. Mine is firing right now.

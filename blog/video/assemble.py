@@ -87,8 +87,9 @@ def still_to_clip(img: Path, seconds: float, dst: Path) -> None:
     Full-bleed 1920x1080 stills (the diagrams/cards) collide with burned-in
     captions — a caption landed exactly on diagram-01's own footer text and
     garbled both. So stills are scaled to 940px tall and top-padded, leaving a
-    ~110px clean band at the bottom that the caption style (MarginV=10 in
-    PlayRes space) lands inside. Video segments keep their native letterbox.
+    ~110px clean band at the bottom that the caption strip (MarginV=56 in real
+    pixels, ~74px tall) lands inside. Video segments keep their native
+    letterbox.
     """
     run([
         "ffmpeg", "-y", "-loop", "1", "-t", f"{seconds:.3f}", "-i", str(img),
@@ -189,26 +190,39 @@ def main() -> None:
     else:
         base = silent
 
+    # captions.ass is the real deal: PlayRes 1920x1080 so sizes are pixels,
+    # one line per cue, a translucent padded strip (BorderStyle=3) behind the
+    # text, and inline colour on the key words. It carries its own styling, so
+    # no force_style here. The SRT is only a fallback (and the a11y side-car).
+    #
+    # ffmpeg's subtitles/ass filter splits options on ':', so a Windows drive
+    # letter ("C:/…") is misread as an option. Run from the file's own
+    # directory and pass a bare filename instead of escaping.
+    ass = HERE / "captions.ass"
     srt = HERE / "captions.srt"
-    if srt.exists():
-        # FontSize/MarginV are in the SRT->ASS default PlayRes space, not pixels.
-        # 17/10 lands the cue in the letterbox band under the terminal window;
-        # larger MarginV pushes it up over the CLI's own output panel.
+    if ass.exists():
+        vf = f"ass={ass.name}"
+        cap = "captions.ass (styled strip)"
+    elif srt.exists():
         style = ("FontName=Segoe UI,FontSize=17,PrimaryColour=&H00F4EEE8,"
                  "OutlineColour=&H00201710,BorderStyle=3,Outline=1,Shadow=0,"
                  "MarginV=10,Alignment=2")
-        # ffmpeg's subtitles filter splits options on ':', so a Windows drive
-        # letter ("C:/…") is misread as an option. Run from the file's own
-        # directory and pass a bare filename instead of escaping.
-        cmd = ["ffmpeg", "-y", "-i", str(base),
-               "-vf", f"subtitles={srt.name}:force_style='{style}'",
+        vf = f"subtitles={srt.name}:force_style='{style}'"
+        cap = "captions.srt (fallback — run captions_v2.py to get the ASS)"
+    else:
+        vf = None
+        cap = None
+
+    if vf:
+        print(f"captions  : {cap}")
+        cmd = ["ffmpeg", "-y", "-i", str(base), "-vf", vf,
                "-c:v", "libx264", "-preset", "medium", "-crf", "18"]
         cmd += ["-c:a", "copy"] if have_audio else ["-an"]
         cmd.append(str(OUT))
         run(cmd, cwd=HERE)
     else:
         shutil.copy(base, OUT)
-        print("NOTE: captions.srt absent — shipped without burned-in captions")
+        print("NOTE: no captions.ass/.srt — shipped without burned-in captions")
 
     dur = probe_duration(OUT)
     kind = "with narration" if have_audio else "SILENT preview (captioned)"
