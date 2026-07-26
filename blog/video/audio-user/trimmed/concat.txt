@@ -1,0 +1,8 @@
+file 'C:/Users/abhis/Desktop/OSS/funnel-of-thought/blog/video/audio-user/trimmed/section1.wav'
+file 'C:/Users/abhis/Desktop/OSS/funnel-of-thought/blog/video/audio-user/trimmed/section2.wav'
+file 'C:/Users/abhis/Desktop/OSS/funnel-of-thought/blog/video/audio-user/trimmed/section3.wav'
+file 'C:/Users/abhis/Desktop/OSS/funnel-of-thought/blog/video/audio-user/trimmed/section4.wav'
+file 'C:/Users/abhis/Desktop/OSS/funnel-of-thought/blog/video/audio-user/trimmed/section5.wav'
+file 'C:/Users/abhis/Desktop/OSS/funnel-of-thought/blog/video/audio-user/trimmed/section6.wav'
+file 'C:/Users/abhis/Desktop/OSS/funnel-of-thought/blog/video/audio-user/trimmed/section7.wav'
+file 'C:/Users/abhis/Desktop/OSS/funnel-of-thought/blog/video/audio-user/trimmed/section8.wav'

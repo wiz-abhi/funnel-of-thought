@@ -2,60 +2,60 @@
  "sections": [
   {
    "n": 1,
-   "file": null,
-   "duration": 34.759,
+   "file": "audio-user/trimmed/section1.wav",
+   "duration": 37.378,
    "target": 35.0,
-   "delta": -0.241
+   "delta": 2.378
   },
   {
    "n": 2,
-   "file": null,
-   "duration": 17.379,
+   "file": "audio-user/trimmed/section2.wav",
+   "duration": 17.557,
    "target": 17.0,
-   "delta": 0.379
+   "delta": 0.557
   },
   {
    "n": 3,
-   "file": null,
-   "duration": 18.621,
+   "file": "audio-user/trimmed/section3.wav",
+   "duration": 18.344,
    "target": 20.0,
-   "delta": -1.379
+   "delta": -1.656
   },
   {
    "n": 4,
-   "file": null,
-   "duration": 17.379,
+   "file": "audio-user/trimmed/section4.wav",
+   "duration": 19.483,
    "target": 18.0,
-   "delta": -0.621
+   "delta": 1.483
   },
   {
    "n": 5,
-   "file": null,
-   "duration": 26.069,
+   "file": "audio-user/trimmed/section5.wav",
+   "duration": 27.806,
    "target": 26.0,
-   "delta": 0.069
+   "delta": 1.806
   },
   {
    "n": 6,
-   "file": null,
-   "duration": 11.586,
+   "file": "audio-user/trimmed/section6.wav",
+   "duration": 11.916,
    "target": 11.0,
-   "delta": 0.586
+   "delta": 0.916
   },
   {
    "n": 7,
-   "file": null,
-   "duration": 16.138,
+   "file": "audio-user/trimmed/section7.wav",
+   "duration": 17.743,
    "target": 18.0,
-   "delta": -1.862
+   "delta": -0.257
   },
   {
    "n": 8,
-   "file": null,
-   "duration": 21.103,
+   "file": "audio-user/trimmed/section8.wav",
+   "duration": 20.754,
    "target": 22.0,
-   "delta": -0.897
+   "delta": -1.246
   }
  ],
- "total_duration": 163.034
+ "total_duration": 170.982
 }
