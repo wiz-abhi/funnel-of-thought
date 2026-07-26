@@ -2,7 +2,7 @@
 title: "I gave my AI agent a funnel over its own reasoning. It told me exactly where it stops thinking."
 published: false
 tags: opentelemetry, observability, ai, signoz
-cover_image:
+cover_image: https://raw.githubusercontent.com/wiz-abhi/funnel-of-thought/main/docs/media/banner.gif
 ---
 
 My agent has a validation step. It runs before the agent answers, and its whole job is to check the tool result.
@@ -154,6 +154,8 @@ Which is the whole thesis arriving uninvited. Traditional services crash. Agents
 
 ---
 
-*Built for the [Agents of SigNoz](https://www.wemakedevs.org/hackathons/signoz) hackathon. Code, funnel definitions and the MCP server: [github.com/wiz-abhi/funnel-of-thought](https://github.com/wiz-abhi/funnel-of-thought).*
+**▶ [3-minute demo](https://youtu.be/N9_sCORyT2E)** · **[Live demo](https://wiz-abhi-funnel-of-thought.static.hf.space)** · **[Code](https://github.com/wiz-abhi/funnel-of-thought)**
+
+*Built for the [Agents of SigNoz](https://www.wemakedevs.org/hackathons/signoz) hackathon (Track 1: AI & Agent Observability). The repo has the agent, the `fot` CLI, the MCP server, funnel/dashboard/alert definitions, and `casting.yaml` + lock so you can re-cast the whole stack.*
 
 *AI disclosure: I used Claude as a coding assistant throughout — building the agent, the CLI and the MCP server, and drafting this post. Every number here was measured on my own machine against self-hosted SigNoz v0.132.2; every claim was verified before publishing, and the ones that didn't survive verification were cut.*
