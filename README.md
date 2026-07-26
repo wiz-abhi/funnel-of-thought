@@ -4,7 +4,7 @@
 
 **An AI agent that watches itself think — and tells you the exact step where it stopped.**
 
-**▶ [Watch the 3-min demo](https://youtu.be/N9_sCORyT2E)** · **[Try it live](https://wiz-abhi-funnel-of-thought.static.hf.space)** · [Read the blog](blog/POST.md)
+**▶ [Watch the 3-min demo](https://youtu.be/N9_sCORyT2E)** · **[Try it live](https://wiz-abhi-funnel-of-thought.static.hf.space)** · [Read the blog](https://medium.com/@abhiiishek0101/i-gave-my-ai-agent-a-funnel-over-its-own-reasoning-it-told-me-exactly-where-it-stops-thinking-b4e0d1cb53d1)
 
 ![The cognition funnel: 125 runs start, 80 reach validate in order](docs/media/hero-funnel.gif)
 
