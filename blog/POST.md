@@ -96,7 +96,6 @@ Open one and it's plainly visible in the waterfall:
 That's the transferable idea, and it's worth stating sharply: a counter isn't a coarser answer, it's the **wrong question**. Aggregating per-span and dividing throws away the per-trace join, and no amount of extra `GROUP BY` columns gets it back — ordering is a property of the trace, not of the span.
 
 
-![Everything was green](assets/meme-02-everything-is-green.png)
 
 ## Three potholes
 
@@ -145,7 +144,6 @@ I committed [`PREDICTION.md`](https://github.com/wiz-abhi/funnel-of-thought) bef
 
 And one failure I didn't author at all: mid-batch, my generator **hung for 34 minutes**. 64 of 120 runs done, process alive, no error, no log line — while the API it was waiting on answered in 1.4 seconds. The LLM client had no timeout.
 
-![The silent hang](assets/meme-03-silent-hang.png)
 
 Which is the whole thesis arriving uninvited. Traditional services crash. Agents wait politely, skip their homework, and hand in a confident answer anyway.
 
