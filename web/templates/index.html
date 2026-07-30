@@ -269,6 +269,19 @@
   .metric .cap { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
   .metric .v { font-family: var(--mono); font-size: 26px; font-weight: 600; margin-top: 8px; letter-spacing: -0.02em; }
   .metric .v.warn { color: var(--warn); }
+  /* Prose caveat under a stat block: pre-empts the obvious objection in place,
+     rather than leaving the reader to raise it. */
+  .note { margin: 18px 0 0; color: var(--muted-2); font-size: 13.5px; line-height: 1.65; max-width: 720px; }
+  .note em { color: var(--muted); font-style: normal; font-weight: 600; }
+  .note code { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+  /* MCP tool list */
+  .tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 20px; }
+  .tool { font-family: var(--mono); font-size: 12.5px; padding: 12px 14px; border: 1px solid var(--hair); border-radius: 9px; color: var(--muted); background: rgba(255,255,255,.015); }
+  .tool b { color: var(--ink); font-weight: 600; }
+  .gap-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-top: 18px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .gap-line .big { font-size: 25px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); }
+  .gap-line .zero { color: var(--warn); }
+
 
   /* ── footer ──────────────────────────────────────────── */
   footer.ft {
@@ -352,9 +365,13 @@
         <svg width="17" height="17" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
         View on GitHub
       </a>
-      <a class="btn ghost" href="https://github.com/wiz-abhi/funnel-of-thought/blob/main/blog/video/funnel-of-thought-demo.mp4" target="_blank" rel="noopener">
+      <a class="btn ghost" href="https://youtu.be/N9_sCORyT2E" target="_blank" rel="noopener">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5.5 4.2v7.6L12 8 5.5 4.2Z" fill="currentColor"/></svg>
         Watch the 3-min demo
+      </a>
+      <a class="btn ghost" href="https://medium.com/@abhiiishek0101/i-gave-my-ai-agent-a-funnel-over-its-own-reasoning-it-told-me-exactly-where-it-stops-thinking-b4e0d1cb53d1" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 2.5h11v11h-11z" stroke="currentColor" stroke-width="1.3"/><path d="M4.8 5.6h6.4M4.8 8h6.4M4.8 10.4h3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Read the write-up
       </a>
     </div>
   </header>
@@ -510,6 +527,55 @@
         <div class="v warn">{{ d.metrics.errors }}</div>
       </div>
     </div>
+    <p class="note">
+      Yes — the error count is also 45, so here you could find these traces by
+      counting errors instead. That only works because <em>this</em> agent labels its
+      own premature validation: it knows the ground truth because I injected it.
+      A real agent that validates before its evidence arrives gets a confident
+      <code>SUPPORTED</code> back and records a success — there is no error to count.
+      The funnel finds those runs without the agent having to know it went wrong.
+    </p>
+  </section>
+
+  <!-- ── the MCP gap ─────────────────────────────────────── -->
+  <section class="block reveal-on-scroll">
+    <div class="sec-head">
+      <p class="kicker">Closing the loop</p>
+      <h2 class="sec-title">The agent can now read this funnel itself</h2>
+      <p class="sec-sub">
+        Everything above is a human looking at a chart. The point of measuring a
+        reasoning contract is that the agent can check its own — and it couldn't.
+      </p>
+    </div>
+
+    <div class="gap-line">
+      <span class="big">41</span><span>tools in SigNoz's own MCP server</span>
+      <span class="big zero">0</span><span>of them reach trace funnels</span>
+    </div>
+
+    <p class="note">
+      An agent could already reach traces, metrics, logs, dashboards and alerts
+      through MCP — everything except the one primitive that measures whether it
+      finished thinking. That count is <em>measured, not claimed</em>: the judge
+      script completes an MCP handshake against the live server and enumerates
+      <code>tools/list</code>. Run <code>python scripts/mcp_gap.py --list</code>
+      to see all 41 yourself, and it fails loudly if SigNoz ever ships funnel tools.
+    </p>
+
+    <div class="tools">
+      <div class="tool"><b>create_funnel</b><br>define a contract, in one call</div>
+      <div class="tool"><b>get_funnel_analytics</b><br>per-step conversion, with n</div>
+      <div class="tool"><b>get_funnel_slow_traces</b><br>the slowest step transitions</div>
+      <div class="tool"><b>list_funnels</b><br>what already exists</div>
+      <div class="tool"><b>delete_funnel</b><br>clean up after yourself</div>
+    </div>
+
+    <p class="note">
+      <code>signoz-funnel-mcp</code> ships those five. Point an MCP client at it and
+      ask <em>"build a funnel over my agent's reasoning steps and tell me which step
+      is losing traces."</em> The read path makes zero LLM calls, so an agent can
+      measure itself between turns.
+    </p>
   </section>
 
   <!-- ── footer ──────────────────────────────────────────── -->
