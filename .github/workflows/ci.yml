@@ -49,13 +49,11 @@ jobs:
           fot dashboard apply --help > /dev/null
           fot alert apply --help > /dev/null
 
-      - name: The --json contract reproduce.sh depends on still exists
-        shell: bash
-        run: |
-          for cmd in show compare counter-proof; do
-            fot "$cmd" --help | grep -q -- '--json' \
-              || { echo "::error::fot $cmd lost its --json flag; scripts/reproduce.sh parses it"; exit 1; }
-          done
+      # The CLI/generator contract the shell scripts depend on is asserted by
+      # fot/tests/test_cli_contract.py, which runs in the Tests step above. It
+      # introspects click/argparse rather than grepping --help: rendered help
+      # wraps to the terminal width, so a grep passes on one runner and fails on
+      # another (it did, on exactly this workflow).
 
       - name: Trace generator accepts the flags the setup scripts pass
         shell: bash
