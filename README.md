@@ -3,7 +3,7 @@
 # Funnel of Thought
 
 [![ci](https://github.com/wiz-abhi/funnel-of-thought/actions/workflows/ci.yml/badge.svg)](https://github.com/wiz-abhi/funnel-of-thought/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-109-brightgreen)](fot/tests)
+[![tests](https://img.shields.io/badge/tests-131-brightgreen)](fot/tests)
 [![SigNoz](https://img.shields.io/badge/SigNoz-v0.132.2-orange)](casting.yaml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -197,7 +197,7 @@ docker-compose.yml    OUR containers, joined to signoz-network
 PREDICTION.md         pre-registered hypotheses, committed before data
 ```
 
-**109 unit tests**, none of which need SigNoz, Docker, or an API key:
+**131 unit tests**, none of which need SigNoz, Docker, or an API key:
 `pytest -q`. CI runs them plus `ruff` on Linux and Windows, and asserts that the
 `--json` contract `scripts/reproduce.sh` parses still exists — the wiring bug
 that class of test is there to prevent.
