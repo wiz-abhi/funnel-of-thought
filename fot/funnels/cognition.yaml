@@ -73,26 +73,26 @@ funnels:
   # /analytics/steps answers HTTP 500 "unsupported value: NaN" instead of 0%.
   # That is the loud failure. See SigNoz issue #12143.
   # ---------------------------------------------------------------------------
-  # Measured on 150 traces (100 on model A, 50 on model B), v0.132.2:
-  #   naive presence of `chat <model A>`  : 100 of 150   (66.7% -- the model share)
-  #   this funnel's conversion            :   9 of 150   ( 6.0%)
-  #   ordering breakdown: ordered 9, out_of_order 91
+  # Measured on 90 traces (60 on model A, 30 on model B), v0.132.2:
+  #   plan                 : 90 of 90   (100.00%)
+  #   chat <model A>        : 60 of 90   ( 66.67%)  == model A's share of traffic
   #
-  # TWO independent effects stack here, which is why the number is so low:
-  #   1. model share -- keying on `chat <model>` can never exceed that model's
-  #      slice of traffic, so the ceiling is 66.7%, not 100%.
-  #   2. same-tick collapse -- `chat` is a CHILD of `agent.plan` and starts in the
-  #      same clock tick as its parent. The funnel's `t2 > t1` is STRICT, so 91 of
-  #      the 100 present spans are scored out-of-order.
+  # 66.67% is the honest ceiling, not a drop-off: a funnel keyed on
+  # `chat <model>` can never exceed that model's slice of traffic. The blog
+  # reports 58.33% for the same effect on a different mix (35 of 60, see
+  # spikes/SPIKE-FINDINGS.md) -- the number moves with the traffic split, which
+  # IS the finding. A step whose conversion tracks your deployment mix is not
+  # measuring the step.
   #
-  # Effect 2 dominates effect 1 here. Do not read 6.0% as "the model share":
-  # keying a funnel on a child span that opens with its parent is its own trap.
+  # This arm previously read 6.0%, because `chat` is a CHILD of `agent.plan` and
+  # started in the same clock tick, failing the funnel's strict `t2 > t1`. A
+  # same-tick artefact was completely masking the effect above. Fixed in
+  # Timing.separate() -- the same-tick rule binds parent/child, not just siblings.
   - name: genai
     description: >-
       The same contract keyed on the GenAI LLM span for a model that IS present in
-      the batch. Reads far below 100% for two stacked reasons -- the model's share
-      of traffic caps it, and a child span sharing its parent's timestamp fails the
-      funnel's strict ordering test. See the measured breakdown above.
+      the batch. Conversion equals that model's share of traffic, so the number
+      moves whenever your deployment mix does -- the step looks measured and is not.
     steps:
       - service: ${FOT_SERVICE:-fot-agent}
         span: agent.plan

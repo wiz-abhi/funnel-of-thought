@@ -51,3 +51,23 @@ class Timing:
         seconds = max(MIN_SLEEP_S, rng.uniform(low, high) * self.scale)
         time.sleep(seconds)
         return seconds
+
+    def separate(self) -> float:
+        """Guarantee a CHILD span starts strictly after its parent.
+
+        The same-tick rule applies between a parent and its own child, not just
+        between siblings. A node that opens its span and immediately calls the
+        LLM gives `agent.plan` and its `chat {model}` child an identical start
+        timestamp, and a funnel keyed `agent.plan -> chat {model}` then fails its
+        strict `t2 > t1` test.
+
+        Measured before this existed, over 150 traces: the `chat` span was
+        PRESENT in 100 (its true share of traffic) but only 9 were scored
+        ordered. The funnel read 6.0% where the honest answer was 66.7%, so the
+        same-tick artefact completely masked the model-share effect the GenAI
+        demo is meant to teach.
+
+        Never scaled by ``--fast``: it is correctness, not cosmetics.
+        """
+        time.sleep(MIN_SLEEP_S)
+        return MIN_SLEEP_S

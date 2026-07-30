@@ -116,6 +116,12 @@ def plan_node(state: AgentState) -> AgentState:
             "You are a research agent. In one short sentence, outline how you would "
             f"answer this question using a search tool: {state['question']}"
         )
+        # Load-bearing: the `chat {model}` span created inside llm.chat() is a
+        # CHILD of this one, and without a gap it inherits this span's exact start
+        # timestamp -- so a funnel keyed `agent.plan -> chat {model}` fails its
+        # strict ordering test and reads ~6% instead of the model's real share of
+        # traffic. See Timing.separate().
+        deps.timing.separate()
         result = deps.llm.chat(prompt, step="plan")
         # Load-bearing: guarantees a distinct, ordered timestamp. See timing.py.
         deps.timing.sleep_for("plan", deps.rng)
