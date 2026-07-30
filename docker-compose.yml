@@ -81,10 +81,14 @@ services:
       # Two DIFFERENT models. This pair is what makes the OTel GenAI
       # `{operation} {model}` span name fragment across the batch, which is
       # the input to the counter-proof funnel.
-      FOT_MODEL_PRIMARY: ${FOT_MODEL_PRIMARY:-gemini-3.1-flash-lite}
-      FOT_MODEL_SWAP: ${FOT_MODEL_SWAP:-gemini-3.1-flash}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:?set GEMINI_API_KEY in .env}
+      FOT_MODEL: ${FOT_MODEL:-gemini-3.1-flash-lite}
+      FOT_MODEL_B: ${FOT_MODEL_B:-gemini-3.1-flash}
+      # Unset is fine: the entrypoint falls back to --stub, which emits the same
+      # spans with no LLM calls. Set it for real model latencies.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       FOT_BATCH_SIZE: ${FOT_BATCH_SIZE:-150}
+      # The injected ground truth the funnel is meant to recover. See agent/README.
+      FOT_VALIDATE_RATE: ${FOT_VALIDATE_RATE:-0.64}
       FOT_SEED: ${FOT_SEED:-1337}
     env_file:
       - path: .env
@@ -93,9 +97,9 @@ services:
     restart: "no"
 
   # -------------------------------------------------------------------------
-  # signoz-funnel-mcp: the four funnel tools that 0 of SigNoz's 41 shipped MCP
+  # signoz-funnel-mcp: the five funnel tools that 0 of SigNoz's 41 shipped MCP
   # tools provide — create_funnel, get_funnel_analytics,
-  # get_funnel_slow_traces, list_funnels.
+  # get_funnel_slow_traces, list_funnels, delete_funnel.
   #
   # stdio transport. `run --rm -i` keeps stdin attached, which is what an MCP
   # client does. Without -i the server sees EOF and exits immediately, which

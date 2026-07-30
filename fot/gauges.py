@@ -173,6 +173,11 @@ class GaugeEmitter:
             raise RuntimeError(
                 f"OTLP export to {self.endpoint} did not complete; is the collector listening?"
             )
+        # shutdown() runs one final collection, which re-fires every observable
+        # callback over this same snapshot and reports each series twice. Gauges
+        # are last-write-wins so the panels still looked correct, but any
+        # sum/rate/count widget read double.
+        self._snapshot.clear()
         return points
 
     def shutdown(self) -> None:

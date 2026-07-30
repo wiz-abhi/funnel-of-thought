@@ -13,7 +13,7 @@ step, and the worst cliff called out in words at the bottom.
 from __future__ import annotations
 
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from rich.box import HEAVY_HEAD, ROUNDED
 from rich.console import Console, Group
@@ -26,6 +26,7 @@ from .signoz import StepCounts
 
 __all__ = [
     "console",
+    "err_console",
     "render_funnel",
     "render_compare",
     "render_counter_proof",
@@ -50,8 +51,19 @@ def _utf8_console() -> Console:
 
 
 console = _utf8_console()
+#: Errors go here, not to stdout. Without this, `fot show --json > out.json`
+#: writes the error into the JSON file and leaves the terminal silent.
+#: `_utf8_console()` has already reconfigured sys.stderr by this point.
+err_console = Console(stderr=True, legacy_windows=False)
 
 BAR_WIDTH = 44
+#: Cells the funnel table consumes besides the bar's own content: the five other
+#: columns (2+10+9+11+6), rich's 2-cell padding on all six, and the seven box
+#: rules. Measured against a rendered table rather than derived, because getting
+#: it wrong by three cells still clips the rightmost column.
+FIXED_COLS = 56
+#: Never shrink the bar below this -- past it the chart stops communicating.
+MIN_BAR_WIDTH = 18
 FILL_CHAR = "█"
 EMPTY_CHAR = "░"
 
@@ -114,8 +126,8 @@ def bar_text(n: int, peak: int, style: str, width: int = BAR_WIDTH) -> Text:
 def _fmt_window(start_ns: int, end_ns: int) -> str:
     """Format an analytics window as ``YYYY-MM-DD HH:MM -> YYYY-MM-DD HH:MM UTC``."""
     fmt = "%Y-%m-%d %H:%M"
-    start = datetime.fromtimestamp(start_ns / 1e9, timezone.utc).strftime(fmt)
-    end = datetime.fromtimestamp(end_ns / 1e9, timezone.utc).strftime(fmt)
+    start = datetime.fromtimestamp(start_ns / 1e9, UTC).strftime(fmt)
+    end = datetime.fromtimestamp(end_ns / 1e9, UTC).strftime(fmt)
     return f"{start} -> {end} UTC"
 
 
@@ -145,11 +157,18 @@ def render_funnel(
     worst_idx = worst[0] if worst else -1
     peak = max(counts.totals) if counts.totals else 0
 
+    # The other five columns plus rich's inter-column padding cost FIXED_COLS
+    # cells. At the default 80-column cmd.exe, a hardcoded 44-wide bar overflows
+    # and rich recovers by crushing the `step` column to zero width -- the step
+    # names, the whole point of the chart, silently disappear. Give the bar
+    # whatever is left instead, with a floor so it stays a bar.
+    bar_w = max(MIN_BAR_WIDTH, min(BAR_WIDTH, out.width - FIXED_COLS))
+
     # Build the table first so the header/footer panels can be measured to match it.
     table = Table(box=HEAVY_HEAD, header_style="bold grey62", pad_edge=False, expand=False)
     table.add_column("#", justify="right", style="grey54", width=2)
     table.add_column("step", style="bold", min_width=10)
-    table.add_column("traces reaching this step, in order", width=BAR_WIDTH)
+    table.add_column("traces reaching this step, in order", width=bar_w)
     table.add_column("of entry", justify="right", width=9)
     table.add_column("vs prev", justify="right", width=11)
     table.add_column("lost", justify="right", width=6)
@@ -164,7 +183,7 @@ def render_funnel(
         table.add_row(
             str(i + 1),
             Text(label, style="bold bright_red" if is_worst else "bold white"),
-            bar_text(n, peak, style),
+            bar_text(n, peak, style, width=bar_w),
             Text(f"{cumulative[i]:.1f}%", style=_conversion_style(cumulative[i])),
             Text(
                 f"{step_pct:.1f}% ◀" if is_worst else f"{step_pct:.1f}%",

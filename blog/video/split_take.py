@@ -53,7 +53,7 @@ def gaps(path: Path) -> list[tuple[float, float]]:
 
 def sections() -> list[dict]:
     sys.path.insert(0, str(HERE))
-    from captions_v2 import parse_script          # reuse the one parser
+    from captions_v2 import parse_script  # reuse the one parser
     return parse_script(SCRIPT)
 
 

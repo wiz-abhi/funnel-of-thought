@@ -45,15 +45,71 @@ funnels:
       agent. Differences in validate-step conversion between this and `cognition`
       are attributable to the change under test, not to funnel definition drift.
     steps:
-      - service: ${FOT_CONTROL_SERVICE:-fot-spike2}
+      - service: ${FOT_CONTROL_SERVICE:-fot-agent-control}
         span: agent.plan
         label: plan
-      - service: ${FOT_CONTROL_SERVICE:-fot-spike2}
+      - service: ${FOT_CONTROL_SERVICE:-fot-agent-control}
         span: agent.tool
         label: tool
-      - service: ${FOT_CONTROL_SERVICE:-fot-spike2}
+      - service: ${FOT_CONTROL_SERVICE:-fot-agent-control}
         span: agent.validate
         label: validate
-      - service: ${FOT_CONTROL_SERVICE:-fot-spike2}
+      - service: ${FOT_CONTROL_SERVICE:-fot-agent-control}
         span: agent.respond
         label: respond
+
+  # ---------------------------------------------------------------------------
+  # The spec collision. OTel's GenAI semantic conventions name an LLM span
+  # `{operation} {model}` -- so the MODEL STRING IS INSIDE THE SPAN NAME. Trace
+  # Funnel steps match on exact span name. Both specs are correct; together they
+  # are quietly incompatible.
+  #
+  # `genai` keys step 2 on a model that IS in the batch: it reads a PARTIAL
+  # conversion, because it only sees that model's share of traces. That is the
+  # silent failure you would actually ship.
+  #
+  # `fragmented` keys step 2 on the NEXT patch version -- exactly what a routine
+  # model upgrade does. The step now matches zero traces, and on v0.132.2
+  # /analytics/steps answers HTTP 500 "unsupported value: NaN" instead of 0%.
+  # That is the loud failure. See SigNoz issue #12143.
+  # ---------------------------------------------------------------------------
+  # Measured on 150 traces (100 on model A, 50 on model B), v0.132.2:
+  #   naive presence of `chat <model A>`  : 100 of 150   (66.7% -- the model share)
+  #   this funnel's conversion            :   9 of 150   ( 6.0%)
+  #   ordering breakdown: ordered 9, out_of_order 91
+  #
+  # TWO independent effects stack here, which is why the number is so low:
+  #   1. model share -- keying on `chat <model>` can never exceed that model's
+  #      slice of traffic, so the ceiling is 66.7%, not 100%.
+  #   2. same-tick collapse -- `chat` is a CHILD of `agent.plan` and starts in the
+  #      same clock tick as its parent. The funnel's `t2 > t1` is STRICT, so 91 of
+  #      the 100 present spans are scored out-of-order.
+  #
+  # Effect 2 dominates effect 1 here. Do not read 6.0% as "the model share":
+  # keying a funnel on a child span that opens with its parent is its own trap.
+  - name: genai
+    description: >-
+      The same contract keyed on the GenAI LLM span for a model that IS present in
+      the batch. Reads far below 100% for two stacked reasons -- the model's share
+      of traffic caps it, and a child span sharing its parent's timestamp fails the
+      funnel's strict ordering test. See the measured breakdown above.
+    steps:
+      - service: ${FOT_SERVICE:-fot-agent}
+        span: agent.plan
+        label: plan
+      - service: ${FOT_SERVICE:-fot-agent}
+        span: chat ${FOT_MODEL:-gemini-3.1-flash-lite}
+        label: llm (present model)
+
+  - name: fragmented
+    description: >-
+      Identical to `genai` but with the model version bumped, which is all a routine
+      upgrade changes. Step 2 now matches nothing and the endpoint returns 500
+      "unsupported value: NaN" rather than a conversion of 0.
+    steps:
+      - service: ${FOT_SERVICE:-fot-agent}
+        span: agent.plan
+        label: plan
+      - service: ${FOT_SERVICE:-fot-agent}
+        span: chat ${FOT_MODEL_SWAP:-gemini-3.2-flash-lite}
+        label: llm (bumped model)

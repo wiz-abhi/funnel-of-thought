@@ -1,0 +1,53 @@
+# Docker does NOT read .gitignore. Without this file the documented build
+#   docker build -f signoz_funnel_mcp/Dockerfile -t signoz-funnel-mcp .
+# ships a 1.1 GB context to the daemon, ~720 MB of which is virtualenvs and git
+# history that no layer ever uses. That is a multi-minute stall before the first
+# instruction runs.
+
+# --- virtualenvs (270 MB + 296 MB) ---
+.venv/
+.venv-asr/
+web/.venv/
+env/
+venv/
+
+# --- git history (156 MB) ---
+.git/
+.gitattributes
+
+# --- caches ---
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- build output ---
+build/
+dist/
+*.egg-info/
+
+# --- media and prose: nothing in the image reads these ---
+blog/
+docs/
+spikes/
+web/
+hf-space/
+hf-static/
+*.png
+*.gif
+*.svg
+*.md
+!signoz_funnel_mcp/README.md
+
+# --- secrets: belt and braces, these are gitignored too ---
+.env
+.env.*
+!.env.example
+.signoz-token
+token_dump.json
+runs/
+out/

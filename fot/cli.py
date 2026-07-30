@@ -19,19 +19,33 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import NoReturn
 
 import typer
+from dotenv import load_dotenv
 from rich.table import Table
 from rich.text import Text
 
 from .funnels import DEFAULT_SUITE_PATH, Funnel, FunnelSuite, load_suite
-from .render import console, render_compare, render_counter_proof, render_funnel
-from .signoz import SigNozClient, SigNozError, StepCounts, ns_now, parse_duration
+from .render import console, err_console, render_compare, render_counter_proof, render_funnel
+from .signoz import (
+    FunnelAnalyticsNaN,
+    SigNozClient,
+    SigNozError,
+    StepCounts,
+    ns_now,
+    parse_duration,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DASHBOARD = REPO_ROOT / "dashboards" / "funnel-conversion.json"
 DEFAULT_ALERT = REPO_ROOT / "alerts" / "validate-dropoff.json"
+
+# The setup scripts write SIGNOZ_JWT (and GEMINI_API_KEY) into .env, and the
+# README then tells you to run a bare `fot show`. Without this, none of that is
+# visible to the process and every command dies on a missing credential.
+# Real environment variables win, so CI and `docker run -e` still override.
+load_dotenv(REPO_ROOT / ".env", override=False)
 
 app = typer.Typer(
     add_completion=False,
@@ -46,15 +60,69 @@ app.add_typer(alert_app, name="alert")
 
 SinceOpt = typer.Option("30d", "--since", "-s", help="Lookback window, e.g. 24h, 7d, 30d.")
 DefsOpt = typer.Option(None, "--defs", "-f", help="Funnel definition YAML.")
+JsonOpt = typer.Option(False, "--json", help="Emit machine-readable JSON instead of a chart.")
 
 
-def _fail(message: str) -> None:
-    """Print an error and exit non-zero."""
-    console.print(Text(f"error: {message}", style="bold red"))
+def _emit(payload: dict) -> None:
+    """Write one JSON document to stdout and nothing else.
+
+    ``scripts/reproduce.sh`` parses this, so the rich console is bypassed
+    deliberately: no colour codes, no panels, no trailing prose.
+    """
+    print(json.dumps(payload))
+
+
+def _arm(funnel: Funnel, counts: StepCounts) -> dict:
+    """One funnel's result in the shape ``--json`` consumers expect.
+
+    ``conversion`` is the *last* step relative to the first, i.e. how much of
+    the contract survived end to end. It is ``None`` when the server refused to
+    answer, so a caller can tell "0% converted" apart from "no answer".
+    """
+    pct = counts.cumulative_pct()
+    return {
+        "funnel": funnel.name,
+        "entered": counts.entered,
+        "degraded": counts.degraded,
+        "status": counts.nan_status or 200,
+        "error": counts.nan_error,
+        "conversion": None if counts.degraded else round(pct[-1], 2) if pct else None,
+        "steps": [
+            {
+                "name": label,
+                "conversion": round(pct[i], 2),
+                "n": counts.totals[i],
+                "errors": counts.errors[i],
+            }
+            for i, label in enumerate(counts.labels)
+        ],
+    }
+
+
+def _fail(message: str) -> NoReturn:
+    """Print an error to stderr and exit non-zero.
+
+    stderr, not stdout, so `--json` output stays machine-parseable and a
+    redirected run still shows the operator what went wrong.
+    """
+    err_console.print(Text(f"error: {message}", style="bold red"))
     raise typer.Exit(1)
 
 
-def _load(defs: Optional[Path]) -> FunnelSuite:
+def _read_json(path: Path, kind: str) -> dict:
+    """Read a JSON artefact, failing cleanly rather than tracebacking.
+
+    A trailing comma in a dashboard file used to raise a raw ``JSONDecodeError``
+    at the user; every other failure in this CLI goes through :func:`_fail`.
+    """
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        _fail(f"{kind} file {path} could not be read: {exc}")
+        raise  # unreachable; _fail exits
+
+
+def _load(defs: Path | None) -> FunnelSuite:
     """Load a funnel suite, exiting cleanly on a bad path or malformed file."""
     try:
         return load_suite(defs or DEFAULT_SUITE_PATH)
@@ -92,6 +160,38 @@ def _counts(client: SigNozClient, funnel: Funnel, start_ns: int, end_ns: int) ->
     return client.step_analytics(funnel_id, start_ns, end_ns, funnel.labels)
 
 
+def _overview_probe(
+    client: SigNozClient, funnel: Funnel, start_ns: int, end_ns: int
+) -> tuple[int, str]:
+    """Ask the endpoint that actually exhibits the zero-match NaN bug.
+
+    Measured on v0.132.2 against a funnel whose step 2 matches zero traces:
+
+        /analytics/steps           -> 200, total_s2_spans = 0   (handled cleanly)
+        /analytics/overview        -> 500  unsupported value: NaN
+        /analytics/steps/overview  -> 500  unsupported value: NaN
+
+    So a fragmented funnel looks like an ordinary 0% through the counts endpoint
+    the charts use, and only blows up on the two overview endpoints. Reporting
+    the *counts* status would understate the bug; probe an overview endpoint.
+
+    Returns:
+        ``(status, error_body)`` -- ``(200, "")`` when the server answers.
+    """
+    funnel_id = _resolve(client, funnel)
+    try:
+        client.request(
+            "POST",
+            f"/api/v1/trace-funnels/{funnel_id}/analytics/overview",
+            {"start_time": start_ns, "end_time": end_ns},
+        )
+    except FunnelAnalyticsNaN as exc:
+        return exc.status or 500, exc.body or str(exc)
+    except SigNozError as exc:
+        return exc.status or 0, str(exc)
+    return 200, ""
+
+
 # --------------------------------------------------------------------------------------
 # commands
 # --------------------------------------------------------------------------------------
@@ -99,8 +199,8 @@ def _counts(client: SigNozClient, funnel: Funnel, start_ns: int, end_ns: int) ->
 
 @app.command()
 def apply(
-    defs: Optional[Path] = typer.Argument(None, help="Funnel definition YAML."),
-    only: Optional[str] = typer.Option(None, "--only", help="Apply just this funnel."),
+    defs: Path | None = typer.Argument(None, help="Funnel definition YAML."),
+    only: str | None = typer.Option(None, "--only", help="Apply just this funnel."),
 ) -> None:
     """Create or update funnels in SigNoz from a YAML definition (idempotent)."""
     suite = _load(defs)
@@ -137,7 +237,8 @@ def apply(
 def show(
     name: str = typer.Argument("cognition", help="Funnel name from the definition file."),
     since: str = SinceOpt,
-    defs: Optional[Path] = DefsOpt,
+    defs: Path | None = DefsOpt,
+    as_json: bool = JsonOpt,
 ) -> None:
     """Render a funnel as a terminal bar chart, with absolute n on every bar."""
     suite = _load(defs)
@@ -153,17 +254,26 @@ def show(
     except SigNozError as exc:
         _fail(str(exc))
         return
+    if as_json:
+        _emit({"window": since, **_arm(funnel, counts)})
+        return
     render_funnel(funnel, counts, window=since, start_ns=start_ns, end_ns=end_ns)
 
 
 @app.command()
 def compare(
-    left: str = typer.Argument(..., help="First funnel (treatment)."),
-    right: str = typer.Argument(..., help="Second funnel (control)."),
+    left: str = typer.Argument("cognition", help="First funnel (treatment)."),
+    right: str = typer.Argument("fragmented", help="Second funnel (control/fragmented)."),
     since: str = SinceOpt,
-    defs: Optional[Path] = DefsOpt,
+    defs: Path | None = DefsOpt,
+    as_json: bool = JsonOpt,
 ) -> None:
-    """Compare two funnels side by side, step for step."""
+    """Compare two funnels side by side, step for step.
+
+    Defaults to ``cognition`` vs ``fragmented``: the same reasoning contract
+    keyed on stable node span names, then keyed on the OTel GenAI ``chat
+    {model}`` span. The second one is hostage to the model string.
+    """
     suite = _load(defs)
     try:
         fa, fb = suite.get(left), suite.get(right)
@@ -171,12 +281,34 @@ def compare(
         _fail(str(exc))
         return
     start_ns, end_ns = _window(since)
+    probe: tuple[int, str] = (200, "")
     try:
         with SigNozClient() as client:
             ca = _counts(client, fa, start_ns, end_ns)
             cb = _counts(client, fb, start_ns, end_ns)
+            if as_json:
+                probe = _overview_probe(client, fb, start_ns, end_ns)
     except SigNozError as exc:
         _fail(str(exc))
+        return
+    if as_json:
+        right_arm = _arm(fb, cb)
+        status, error = probe
+        _emit(
+            {
+                "window": since,
+                "left": _arm(fa, ca),
+                "right": right_arm,
+                # The right arm as the fragmentation failure, reported from the
+                # endpoint that actually exhibits it. reproduce.sh asserts here.
+                "fragmented": {
+                    "status": status,
+                    "error": error,
+                    "conversion": right_arm["conversion"],
+                    "endpoint": "/analytics/overview",
+                },
+            }
+        )
         return
     render_compare((fa, ca), (fb, cb), window=since)
 
@@ -186,7 +318,8 @@ def counter_proof(
     name: str = typer.Argument("cognition", help="Funnel to scrutinise."),
     step: str = typer.Option("validate", "--step", help="Step label to put on trial."),
     since: str = SinceOpt,
-    defs: Optional[Path] = DefsOpt,
+    defs: Path | None = DefsOpt,
+    as_json: bool = JsonOpt,
 ) -> None:
     """Show why a naive span counter cannot measure a reasoning contract.
 
@@ -222,11 +355,34 @@ def counter_proof(
         _fail(str(exc))
         return
 
+    present = naive.get(span, 0)
+    if as_json:
+        pct = counts.cumulative_pct()
+        _emit(
+            {
+                "window": since,
+                "funnel": funnel.name,
+                "step": step,
+                # What a naive `GROUP BY span name COUNT` sees: presence only.
+                "counter_pct": round(100.0 * present / total, 2) if total else 0.0,
+                # What the ordered funnel sees: presence *in the right place*.
+                "funnel_pct": round(pct[idx], 2) if pct else 0.0,
+                "counter_n": present,
+                "funnel_n": counts.totals[idx] if counts.totals else 0,
+                "total_traces": total,
+                # The split PREDICTION.md committed to reporting: of the traces the
+                # counter credits but the funnel does not, how many were missing the
+                # span entirely versus emitting it out of order.
+                "ordering": ordering,
+            }
+        )
+        return
+
     render_counter_proof(
         funnel,
         counts,
         step_index=idx,
-        naive_present=naive.get(span, 0),
+        naive_present=present,
         naive_total=total,
         ordering=ordering,
         window=since,
@@ -237,8 +393,8 @@ def counter_proof(
 def gauges(
     name: str = typer.Argument("cognition", help="Funnel to publish, or 'all'."),
     since: str = SinceOpt,
-    defs: Optional[Path] = DefsOpt,
-    endpoint: Optional[str] = typer.Option(None, "--endpoint", help="OTLP base URL."),
+    defs: Path | None = DefsOpt,
+    endpoint: str | None = typer.Option(None, "--endpoint", help="OTLP base URL."),
 ) -> None:
     """Re-emit per-step conversion as OTLP gauges so it can be dashboarded and alerted.
 
@@ -328,13 +484,13 @@ def remove(name: str = typer.Argument(..., help="Funnel name to delete from SigN
 
 @dashboard_app.command("apply")
 def dashboard_apply(
-    path: Optional[Path] = typer.Argument(None, help="Dashboard JSON (v5 widget schema)."),
+    path: Path | None = typer.Argument(None, help="Dashboard JSON (v5 widget schema)."),
 ) -> None:
     """Create the funnel-conversion dashboard from checked-in JSON."""
     path = path or DEFAULT_DASHBOARD
     if not path.exists():
         _fail(f"dashboard file not found: {path}")
-    body = json.loads(path.read_text(encoding="utf-8"))
+    body = _read_json(path, "dashboard")
     try:
         with SigNozClient() as client:
             dashboard_id = client.create_dashboard(body)
@@ -349,13 +505,13 @@ def dashboard_apply(
 
 @alert_app.command("apply")
 def alert_apply(
-    path: Optional[Path] = typer.Argument(None, help="Alert rule JSON."),
+    path: Path | None = typer.Argument(None, help="Alert rule JSON."),
 ) -> None:
     """Create the validate-step drop-off alert from checked-in JSON."""
     path = path or DEFAULT_ALERT
     if not path.exists():
         _fail(f"alert file not found: {path}")
-    body = json.loads(path.read_text(encoding="utf-8"))
+    body = _read_json(path, "alert")
     try:
         with SigNozClient() as client:
             client.create_rule(body)

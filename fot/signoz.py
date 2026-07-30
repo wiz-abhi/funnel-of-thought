@@ -20,9 +20,10 @@ import os
 import shutil
 import subprocess
 import time
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 import httpx
 
@@ -116,12 +117,20 @@ class StepCounts:
         errors: errored spans at each step, ``len == n_steps``.
         degraded: ``True`` when the server returned the NaN 500 and counts were
             forced to zero rather than crashing the CLI.
+        nan_status: HTTP status that caused ``degraded``, when known.
+        nan_error: the server's message that caused ``degraded``.
     """
 
     labels: list[str]
     totals: list[int]
     errors: list[int] = field(default_factory=list)
     degraded: bool = False
+    # Kept so a caller can assert on the *specific* failure ("500, and the body
+    # says NaN") instead of only being able to see "no data". `reproduce.sh`
+    # depends on this distinction: an all-zero funnel and the NaN 500 are very
+    # different findings.
+    nan_status: int | None = None
+    nan_error: str = ""
 
     def __post_init__(self) -> None:
         if not self.errors:
@@ -329,7 +338,9 @@ class SigNozClient:
                     status=403,
                     body=body,
                 )
-            raise SigNozError(f"{method} {path} -> {resp.status_code}", status=resp.status_code, body=body)
+            raise SigNozError(
+                f"{method} {path} -> {resp.status_code}", status=resp.status_code, body=body
+            )
 
         if not resp.content:
             return None
@@ -406,8 +417,14 @@ class SigNozClient:
                 f"/api/v1/trace-funnels/{funnel_id}/analytics/steps",
                 {"start_time": start_ns, "end_time": end_ns},
             )
-        except FunnelAnalyticsNaN:
-            return StepCounts(labels=list(labels), totals=[0] * len(labels), degraded=True)
+        except FunnelAnalyticsNaN as exc:
+            return StepCounts(
+                labels=list(labels),
+                totals=[0] * len(labels),
+                degraded=True,
+                nan_status=exc.status,
+                nan_error=exc.body or str(exc),
+            )
 
         rows = data.get("data") or []
         payload: dict[str, Any] = rows[0].get("data", {}) if rows else {}
@@ -588,7 +605,7 @@ class SigNozClient:
         """Close the underlying HTTP connection pool."""
         self._http.close()
 
-    def __enter__(self) -> "SigNozClient":
+    def __enter__(self) -> SigNozClient:
         return self
 
     def __exit__(self, *exc: object) -> None:

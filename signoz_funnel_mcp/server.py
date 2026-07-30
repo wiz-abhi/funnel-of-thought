@@ -34,14 +34,12 @@ from mcp.server.fastmcp import FastMCP
 
 try:  # package import (python -m signoz_funnel_mcp.server)
     from signoz_funnel_mcp.client import (
-        FunnelStep,
         SigNozError,
         SigNozFunnelClient,
         resolve_window_ns,
     )
 except ImportError:  # direct script import (python server.py)
     from client import (  # type: ignore[no-redef]
-        FunnelStep,
         SigNozError,
         SigNozFunnelClient,
         resolve_window_ns,

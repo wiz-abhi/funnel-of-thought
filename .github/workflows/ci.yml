@@ -1,0 +1,70 @@
+name: ci
+
+# Runs on a clean checkout, which is the point: it proves the documented install
+# path works somewhere other than the author's laptop. Nothing here needs SigNoz,
+# Docker or a Gemini key -- the whole read path is offline by design.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is in the matrix deliberately: it is the platform this was
+        # built on, and the console-encoding and 80-column render paths are
+        # Windows-specific.
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install (the exact command the README gives)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[all]"
+
+      - name: Tests
+        run: python -m pytest -q
+
+      - name: Lint
+        run: python -m ruff check .
+
+      - name: Console scripts are importable and respond to --help
+        shell: bash
+        run: |
+          fot --help
+          for cmd in apply show compare counter-proof gauges ls rm; do
+            fot "$cmd" --help > /dev/null
+          done
+          fot dashboard apply --help > /dev/null
+          fot alert apply --help > /dev/null
+
+      - name: The --json contract reproduce.sh depends on still exists
+        shell: bash
+        run: |
+          for cmd in show compare counter-proof; do
+            fot "$cmd" --help | grep -q -- '--json' \
+              || { echo "::error::fot $cmd lost its --json flag; scripts/reproduce.sh parses it"; exit 1; }
+          done
+
+      - name: Trace generator accepts the flags the setup scripts pass
+        shell: bash
+        run: |
+          python -m agent.generate --runs 4 --model gemini-3.1-flash-lite \
+            --validate-rate 0.64 --seed 1337 --stub --fast --no-otlp
+
+      - name: Shell scripts parse
+        if: runner.os == 'Linux'
+        run: |
+          bash -n scripts/setup.sh
+          bash -n scripts/reproduce.sh

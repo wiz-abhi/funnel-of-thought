@@ -13,10 +13,16 @@ makes the funnel demo work:
 
 `out_of_order` is the mode that powers the money screenshot. If validate were
 only ever *skipped*, a naive `GROUP BY span_name COUNT` would report the same
-~61% the funnel does, and the demo would prove nothing. When validate instead
-runs *early*, the counter says validate is present in ~100% of traces while the
-ordered funnel says only ~61% have it in the correct position -- which is the
+64% the funnel does, and the demo would prove nothing. When validate instead
+runs *early*, the counter says validate is present in 100% of traces while the
+ordered funnel says only 64% have it in the correct position -- which is the
 point: a counter is structurally blind to per-trace ordering.
+
+The 64% is not discovered, it is INJECTED: `--validate-rate 0.64` decides how
+many runs honour the contract, and the funnel's job is to recover that rate from
+the traces alone. Treat it as a calibration harness -- the known injection rate
+is what makes the counter's 100% demonstrably wrong rather than merely
+suspicious.
 
 Span shape of one run (all in a SINGLE trace):
 

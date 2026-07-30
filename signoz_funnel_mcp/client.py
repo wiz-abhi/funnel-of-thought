@@ -68,10 +68,11 @@ import math
 import os
 import re
 import time
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import TracebackType
-from typing import Any, Iterable, Literal, Sequence
+from typing import Any, Literal
 
 import httpx
 
@@ -211,7 +212,7 @@ def to_ns(moment: datetime | str | int | float) -> int:
             text = text[:-1] + "+00:00"
         moment = datetime.fromisoformat(text)
     if moment.tzinfo is None:
-        moment = moment.replace(tzinfo=timezone.utc)
+        moment = moment.replace(tzinfo=UTC)
     return int(moment.timestamp() * 1_000_000_000)
 
 
@@ -298,7 +299,7 @@ class FunnelStep:
     filters: dict[str, Any] = field(default_factory=lambda: {"items": [], "op": "AND"})
 
     @classmethod
-    def from_dict(cls, raw: dict[str, Any]) -> "FunnelStep":
+    def from_dict(cls, raw: dict[str, Any]) -> FunnelStep:
         """Build a step from a loose dict, accepting friendly aliases.
 
         Accepts ``service``/``service_name`` and ``span``/``span_name`` so MCP
@@ -511,7 +512,7 @@ class SigNozFunnelClient:
         """Close the underlying HTTP connection pool."""
         self._http.close()
 
-    def __enter__(self) -> "SigNozFunnelClient":
+    def __enter__(self) -> SigNozFunnelClient:
         return self
 
     def __exit__(
@@ -652,7 +653,9 @@ class SigNozFunnelClient:
 
     def create_funnel(self, name: str, timestamp_ms: int | None = None) -> str:
         """``POST /new`` -- create an empty funnel, returning its new id."""
-        data = self._request("POST", f"{FUNNELS_PREFIX}/new", build_create_payload(name, timestamp_ms))
+        data = self._request(
+            "POST", f"{FUNNELS_PREFIX}/new", build_create_payload(name, timestamp_ms)
+        )
         funnel_id = (data or {}).get("funnel_id") if isinstance(data, dict) else None
         if not funnel_id:
             raise SigNozError(f"Funnel created but no funnel_id came back: {data!r}")
@@ -903,8 +906,8 @@ class SigNozFunnelClient:
                 "requested": time_range if start is None else f"{start} .. {end}",
                 "start_ns": start_ns,
                 "end_ns": end_ns,
-                "start_iso": datetime.fromtimestamp(start_ns / 1e9, timezone.utc).isoformat(),
-                "end_iso": datetime.fromtimestamp(end_ns / 1e9, timezone.utc).isoformat(),
+                "start_iso": datetime.fromtimestamp(start_ns / 1e9, UTC).isoformat(),
+                "end_iso": datetime.fromtimestamp(end_ns / 1e9, UTC).isoformat(),
             },
             "steps": steps,
             "end_to_end": end_to_end,

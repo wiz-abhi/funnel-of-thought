@@ -8,7 +8,7 @@
     writes funnels/dashboards/alerts through the API.
 
     Interfaces this script assumes (sibling components own these):
-        python -m agent.generate --count N --swap-at K --seed S
+        python -m agent.generate --runs N --model M --validate-rate R --seed S [--stub]
         python -m fot.cli apply
         python -m fot.cli show
 
@@ -84,15 +84,27 @@ function Set-DotEnv {
 # -----------------------------------------------------------------------------
 # Token - the step people get stuck on
 # -----------------------------------------------------------------------------
+# -Token runs before the venv section below, so resolve an interpreter on demand:
+# prefer the venv (it has httpx), fall back to whatever python is on PATH.
+function Get-VenvPython {
+    foreach ($c in @('.venv\Scripts\python.exe', '.venv/bin/python')) {
+        $p = Join-Path $PSScriptRoot "..\$c"
+        if (Test-Path $p) { return (Resolve-Path $p).Path }
+    }
+    $sys = Get-Command python -ErrorAction SilentlyContinue
+    if ($sys) { return $sys.Source }
+    Die "python not found - Python 3.11+ required"
+}
+
 function New-SignozToken {
     Say "SigNoz editor token"
     Note "Funnel WRITES (/api/v1/trace-funnels/new, /steps/update) are gated on"
     Note "EditAccess. A SigNoz API key does NOT carry it - you need a login JWT"
     Note "from an admin or editor account. That is what this step mints."
     Note ""
-    Note "Credentials are used once, for one POST to $($env:SIGNOZ_URL)/api/v1/login,"
-    Note "and are never written to disk. Only the returned JWT is stored, in"
-    Note ".env (gitignored)."
+    Note "Credentials are used once, for one POST to"
+    Note "$($env:SIGNOZ_URL)/api/v2/sessions/email_password, and are never written"
+    Note "to disk. Only the returned JWT is stored, in .env (gitignored)."
 
     $email = Read-Host "  SigNoz email"
     $secure = Read-Host "  SigNoz password" -AsSecureString
@@ -100,24 +112,33 @@ function New-SignozToken {
     $password = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
     [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
 
-    $body = @{ email = $email; password = $password } | ConvertTo-Json -Compress
+    # Delegate to fot.signoz.SigNozClient.login(). It discovers the orgID that
+    # /api/v2/sessions/email_password requires. Do NOT hand-roll this against the
+    # legacy /api/v1/login route: it no longer exists, and the SPA answers it with
+    # index.html and HTTP 200 - no token, no error, very confusing.
+    $py = Get-VenvPython
+    $script = @'
+import os, sys
+try:
+    from fot.signoz import SigNozClient, SigNozError
+except ImportError as exc:
+    sys.exit(f"cannot import fot.signoz ({exc}); run .\scripts\setup.ps1 first")
+try:
+    with SigNozClient(os.environ.get("SIGNOZ_URL", "http://localhost:8080")) as client:
+        print(client.login(sys.argv[1], sys.argv[2]))
+except SigNozError as exc:
+    sys.exit(f"login failed: {exc}")
+except Exception as exc:
+    sys.exit(f"login failed: {type(exc).__name__}: {exc}")
+'@
+    $tok = ($script | & $py - $email $password) 2>&1 | Select-Object -Last 1
     $password = $null
 
-    try {
-        $resp = Invoke-RestMethod -Method Post -Uri "$($env:SIGNOZ_URL)/api/v1/login" `
-                    -ContentType 'application/json' -Body $body -TimeoutSec 20
-    } catch {
-        Warn "login request failed: $($_.Exception.Message)"
+    if ($LASTEXITCODE -ne 0 -or -not $tok -or $tok -notmatch '^[A-Za-z0-9_.\-]+$') {
+        Warn "no token returned - check the credentials. $tok"
         return $false
     }
-
-    # SigNoz has moved this field between versions; try the known shapes.
-    $tok = $null
-    foreach ($try in @({ $resp.data.accessToken }, { $resp.accessToken }, { $resp.data.access_token })) {
-        try { $v = & $try } catch { $v = $null }
-        if ($v -is [string] -and $v) { $tok = $v; break }
-    }
-    if (-not $tok) { Warn "no token in the response - check the credentials"; return $false }
+    $tok = "$tok".Trim()
 
     Set-DotEnv -Key 'SIGNOZ_JWT' -Value $tok
     $env:SIGNOZ_JWT = $tok
@@ -191,22 +212,47 @@ if (-not $env:SIGNOZ_JWT) {
 # Generate traces
 # -----------------------------------------------------------------------------
 if (-not $SkipBatch) {
-    Say "Generating traces (the only step that calls an LLM)"
+    Say "Generating traces"
+
+    # No Gemini key is not a blocker. --stub emits the identical span shape with
+    # zero LLM calls, so every funnel result is reproducible offline in seconds.
+    $stub = @()
     if (-not $env:GEMINI_API_KEY) {
-        Warn "GEMINI_API_KEY is empty - skipping batch generation"
-        Note "set it in .env and re-run"
+        Warn "GEMINI_API_KEY is empty - using --stub (no LLM calls, same spans)"
+        Note "for live Gemini latencies: set GEMINI_API_KEY in .env and re-run"
+        $stub = @('--stub')
     } else {
-        Note "~$Count traces, offline, free-tier Gemini. Expect 5-15 min at 15 RPM."
-        Note "The model swaps halfway through - that is what fragments the LLM span name."
-        $seed = if ($env:FOT_SEED) { $env:FOT_SEED } else { '1337' }
-        & $venvPy -m agent.generate --count $Count --swap-at ([int]($Count / 2)) --seed $seed
-        if ($LASTEXITCODE -eq 0) {
-            Ok "batch complete"
-            Note "waiting 15s for the ingester to flush to ClickHouse"
-            Start-Sleep -Seconds 15
-        } else {
-            Warn "batch generation failed or agent.generate is not available yet"
-        }
+        Note "live Gemini on the free tier: expect 5-15 min at 15 RPM."
+    }
+
+    # Two models on purpose: the GenAI convention puts the model INSIDE the span
+    # name, so a funnel keyed on `chat <model>` only sees that model's share of
+    # traffic. Neither is FOT_MODEL_SWAP, so the `fragmented` funnel keyed on the
+    # bumped version matches zero traces and triggers the NaN 500.
+    $seed    = if ($env:FOT_SEED) { $env:FOT_SEED } else { '1337' }
+    # Injected ground truth, pinned so the README's 64% reproduces exactly.
+    $rate    = if ($env:FOT_VALIDATE_RATE) { $env:FOT_VALIDATE_RATE } else { '0.64' }
+    $modelA  = if ($env:FOT_MODEL)   { $env:FOT_MODEL }   else { 'gemini-3.1-flash-lite' }
+    $modelB  = if ($env:FOT_MODEL_B) { $env:FOT_MODEL_B } else { 'gemini-3.1-flash' }
+    $runsA   = [int]($Count * 2 / 3)
+    $runsB   = $Count - $runsA
+    Note "$Count traces, validate-rate=$rate (injected ground truth)"
+
+    $genOk = $true
+    foreach ($pair in @(@($modelA, $runsA), @($modelB, $runsB))) {
+        if ($pair[1] -le 0) { continue }
+        Note "  $($pair[1]) runs on $($pair[0])"
+        & $venvPy -m agent.generate --runs $pair[1] --model $pair[0] `
+            --validate-rate $rate --seed $seed @stub
+        if ($LASTEXITCODE -ne 0) { $genOk = $false; break }
+    }
+
+    if ($genOk) {
+        Ok "batch complete ($Count traces across 2 models)"
+        Note "waiting 15s for the ingester to flush to ClickHouse"
+        Start-Sleep -Seconds 15
+    } else {
+        Die "trace generation failed - nothing below can work without traces"
     }
 } else {
     Say "Generating traces"; Note "skipped (-SkipBatch)"
@@ -218,10 +264,30 @@ if (-not $SkipBatch) {
 Say "Applying SigNoz objects"
 & $venvPy -m fot.cli apply
 if ($LASTEXITCODE -eq 0) {
-    Ok "funnels, dashboard and alert applied"
+    Ok "funnels applied"
 } else {
-    Warn "fot.cli apply failed or is not available yet"
-    Note "once fot/ is wired up:  fot apply"
+    Die "fot.cli apply failed - check the JWT (funnel writes need EditAccess)"
+}
+
+# `apply` creates funnels only. The dashboard and the alert rule are separate
+# objects, and BOTH read the metric `fot.funnel.step.conversion` - which only
+# `fot gauges` emits. Miss any of these three and the dashboard renders empty
+# panels and the alert never evaluates.
+& $venvPy -m fot.cli dashboard apply
+if ($LASTEXITCODE -eq 0) { Ok "dashboard applied" }
+else { Warn "dashboard apply failed - panels will be missing" }
+
+& $venvPy -m fot.cli alert apply
+if ($LASTEXITCODE -eq 0) { Ok "alert rule applied" }
+else { Warn "alert apply failed - the drop-off alert will not fire" }
+
+& $venvPy -m fot.cli gauges all
+if ($LASTEXITCODE -eq 0) {
+    Ok "step conversions published as OTel gauges"
+    Note "this is what fills the dashboard and arms the alert. Re-run after any"
+    Note "new batch to turn the funnel into a time series."
+} else {
+    Warn "gauge emission failed - dashboard/alert will have no data to read"
 }
 
 # -----------------------------------------------------------------------------
@@ -232,8 +298,8 @@ Write-Host @"
   Next:
     fot show                  per-step conversion, n on every bar
     fot counter-proof         naive counter vs the ordered funnel
-    fot compare               working funnel vs the fragmented one
-    bash scripts/reproduce.sh the full 10-minute reproduction
+    fot compare               stable-name funnel vs the GenAI-keyed one
+    bash scripts/reproduce.sh asserts every claim in the README (needs Git Bash)
 
   In the UI:
     SigNoz        $($env:SIGNOZ_URL)
@@ -243,7 +309,7 @@ Write-Host @"
 
   MCP:
     SigNoz's own (41 tools)   http://localhost:8000
-    ours (4 funnel tools)     signoz-funnel-mcp
+    ours (5 funnel tools)     signoz-funnel-mcp
 
   If funnel calls start returning 401, the JWT expired:
     .\scripts\setup.ps1 -Token

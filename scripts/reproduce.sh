@@ -17,11 +17,20 @@
 #      different number; it is structurally the wrong question.
 #   3. A funnel keyed on the OTel GenAI `chat {model}` span is hostage to the
 #      model string. Keyed on a model actually present in the batch it reads a
-#      PARTIAL conversion (~58% — it only sees that model's share of traces).
+#      PARTIAL conversion, capped by that model's share of traces (see the
+#      `genai` funnel in fot/funnels/cognition.yaml for the measured breakdown;
+#      the exact figure is not asserted here because it also depends on
+#      parent/child span timing, which is workload-specific).
 #      Bump the model version in the step name (gemini-3.1 -> 3.2, exactly what
-#      a routine upgrade does) and the step matches ZERO traces, at which point
-#      /analytics/steps returns HTTP 500 "unsupported value: NaN" rather than a
-#      conversion of 0.
+#      a routine upgrade does) and the step matches ZERO traces.
+#
+#      Which endpoint you ask then decides what you see. Measured on v0.132.2:
+#        /analytics/steps           -> 200, total_s2_spans = 0   (handled)
+#        /analytics/overview        -> 500  unsupported value: NaN
+#        /analytics/steps/overview  -> 500  unsupported value: NaN
+#      So through the counts endpoint the charts use, a fragmented funnel is
+#      indistinguishable from an honest 0%. Step 3 below probes an overview
+#      endpoint, because that is where the bug is actually observable.
 #
 #      Both halves matter: the partial read is the silent failure you would
 #      ship; the 500 is the loud one that tells you something is wrong.
@@ -33,9 +42,9 @@
 # (issue #12143 open; PR #12160 proposed; #12167 closed unmerged).
 #
 # -----------------------------------------------------------------------------
-# INTERFACES THIS SCRIPT ASSUMES (sibling components own these):
+# INTERFACES THIS SCRIPT USES (kept in sync with the modules that own them):
 #
-#   python -m agent.generate --count N --swap-at K --seed S
+#   python -m agent.generate --runs N --model M --validate-rate R --seed S [--stub]
 #   python -m fot.cli apply
 #   python -m fot.cli show          --json
 #   python -m fot.cli counter-proof --json
@@ -45,6 +54,10 @@
 #   show           -> {"steps":[{"name":..., "conversion":<float 0-100>, "n":<int>}, ...]}
 #   counter-proof  -> {"counter_pct":<float>, "funnel_pct":<float>, "step":"validate"}
 #   compare        -> {"fragmented":{"status":<int>,"error":"<str>","conversion":<float|null>}}
+#
+# No Gemini key? This script falls back to --stub automatically: identical span
+# shape, zero LLM calls, seconds instead of minutes. Every assertion below still
+# holds, because none of them depend on the model's actual output.
 # =============================================================================
 set -uo pipefail
 
@@ -112,15 +125,28 @@ if [ "$CODE" = "200" ]; then pass "editor JWT valid"
 else fail "JWT returned HTTP $CODE — run ./scripts/setup.sh --token"; exit 1; fi
 
 if [ "$DO_GEN" -eq 1 ]; then
+  STUB=""
   if [ -z "${GEMINI_API_KEY:-}" ]; then
-    fail "GEMINI_API_KEY unset — set it in .env, or re-run with --no-gen"
-    exit 1
+    STUB="--stub"
+    note "no GEMINI_API_KEY — generating with --stub (no LLM calls, same spans)"
+  else
+    note "live Gemini, ~5 min on the free tier"
   fi
-  note "generating 60 traces, model swapping at 30. ~5 min on the free tier."
-  note "Two models is the point: it is what fragments the GenAI span name."
-  "$PY" -m agent.generate --count 60 --swap-at 30 --seed "${FOT_SEED:-1337}" \
-    || { fail "trace generation failed"; exit 1; }
-  pass "60 traces emitted"
+  # Two models on purpose: the GenAI convention puts the model inside the span
+  # name, so a funnel keyed on `chat <model>` sees only that model's share.
+  # Neither is FOT_MODEL_SWAP, so the `fragmented` funnel matches zero traces --
+  # which is what assertion 3 needs.
+  # --validate-rate is the injected ground truth: 64% of runs validate in the
+  # correct position. Pinned so the README's number reproduces exactly.
+  RATE="${FOT_VALIDATE_RATE:-0.64}"
+  note "40 + 20 traces across two models, validate-rate=${RATE}"
+  for pair in "${FOT_MODEL:-gemini-3.1-flash-lite}:40" "${FOT_MODEL_B:-gemini-3.1-flash}:20"; do
+    # shellcheck disable=SC2086
+    "$PY" -m agent.generate --runs "${pair##*:}" --model "${pair%:*}" \
+      --validate-rate "$RATE" --seed "${FOT_SEED:-1337}" $STUB \
+      || { fail "trace generation failed"; exit 1; }
+  done
+  pass "60 traces emitted across two models"
   note "waiting 20s for the ingester to flush to ClickHouse"
   sleep 20
 else
@@ -134,7 +160,9 @@ fi
 # -----------------------------------------------------------------------------
 step 1 "The cliff — a funnel keyed on stable node span names"
 # -----------------------------------------------------------------------------
-SHOW="$("$PY" -m fot.cli show --json 2>/dev/null)"
+# stderr is deliberately NOT suppressed here. Hiding it once turned a plain
+# wiring bug ("No such option: --json") into an opaque "returned nothing".
+SHOW="$("$PY" -m fot.cli show --json)"
 if [ -z "$SHOW" ]; then
   fail "fot.cli show returned nothing"
 else
@@ -152,6 +180,12 @@ for s in d.get("steps",[]):
     pass "validate conversion = ${VAL_PCT}% — a real cliff, materially below 100%"
     note "the funnel is minIf over a monotonic step index: it counts a trace"
     note "only if validate occurred AFTER tool. Skips and reorders both cost."
+    if [ "$DO_GEN" -eq 1 ]; then
+      note "injected ground truth was ${RATE} (i.e. ~$("$PY" -c "print(f'{float('$RATE')*100:.0f}')")%)."
+      note "The funnel RECOVERING that rate is the point: this is a calibration"
+      note "check, not a discovery. Any pre-existing traces in the 30d window"
+      note "shift the recovered number, which is why the assertion is a threshold."
+    fi
   else
     fail "validate conversion = ${VAL_PCT}% — no cliff; see PREDICTION.md, prediction 1"
     note "PREDICTION.md commits us to reporting this rather than tuning the agent."
@@ -161,7 +195,7 @@ fi
 # -----------------------------------------------------------------------------
 step 2 "The counter-proof — why a GROUP BY COUNT cannot answer this"
 # -----------------------------------------------------------------------------
-CP="$("$PY" -m fot.cli counter-proof --json 2>/dev/null)"
+CP="$("$PY" -m fot.cli counter-proof --json)"
 if [ -z "$CP" ]; then
   fail "fot.cli counter-proof returned nothing"
 else
@@ -174,6 +208,18 @@ else
     note "the counter asks 'did this span ever appear?'"
     note "the funnel asks 'did it appear AFTER the previous step, same trace?'"
     note "a counter scores validate-after-respond as a success. It cannot see order."
+
+    # PREDICTION.md commits us to reporting the split between traces MISSING the
+    # span and traces that emit it OUT OF ORDER, rather than lumping them
+    # together as one gap. This is that number, straight from ClickHouse.
+    SPLIT="$(printf '%s' "$CP" | "$PY" -c '
+import json,sys
+o=(json.load(sys.stdin).get("ordering") or {})
+have,later=o.get("has_earlier",0),o.get("has_later",0)
+print(f"{o.get(\"ordered\",0)} ordered | {o.get(\"out_of_order\",0)} out of order | "
+      f"{max(have-later,0)} missing the span entirely  (of {have} traces)")
+' 2>/dev/null)"
+    [ -n "$SPLIT" ] && note "split: ${SPLIT}"
   else
     fail "counter ${C_PCT}% vs funnel ${F_PCT}% — discrepancy not demonstrated"
     note "see PREDICTION.md, prediction 2, for what we committed to say if this held"
@@ -183,7 +229,7 @@ fi
 # -----------------------------------------------------------------------------
 step 3 "The spec collision — GenAI span naming vs exact-match funnel steps"
 # -----------------------------------------------------------------------------
-CMP="$("$PY" -m fot.cli compare --json 2>/dev/null)"
+CMP="$("$PY" -m fot.cli compare --json)"
 if [ -z "$CMP" ]; then
   fail "fot.cli compare returned nothing"
 else
@@ -194,11 +240,19 @@ else
     pass "fragmented funnel -> HTTP 500: ${ERRTXT}"
     note "OTel GenAI names LLM spans '{operation} {model}', so the model string"
     note "is INSIDE the span name. Funnel steps match on exact span name. Keyed"
-    note "on a model present in the batch you get a partial read (~58%); bump"
-    note "gemini-3.1 -> 3.2 and the step matches zero traces. Then"
-    note "BuildFunnelStepOverviewQuery divides by zero with no guard -- while"
-    note "BuildFunnelOverviewQuery, one function away, guards the identical"
-    note "division. SigNoz issue #12143 (open); PR #12160 proposes a fix."
+    note "on a model present in the batch you get a partial read, capped by that"
+    note "model's share of traffic; bump gemini-3.1 -> 3.2 -- an ordinary"
+    note "upgrade -- and the step matches zero traces."
+    note ""
+    note "What you then get depends on which endpoint you ask. Measured here:"
+    note "  /analytics/steps          -> 200, total_s2_spans = 0   (handled)"
+    note "  /analytics/overview       -> 500  unsupported value: NaN"
+    note "  /analytics/steps/overview -> 500  unsupported value: NaN"
+    note "So the counts endpoint the charts use makes a fragmented funnel look"
+    note "like an honest 0%; only the overview endpoints fail loudly. The NaN"
+    note "arrives from aggregates over an empty set (avgIf/quantileIf), not from"
+    note "the conversion division -- that one is already guarded."
+    note "SigNoz issue #12143 (open); PR #12160 proposes a fix."
   elif [ "$STATUS" = "200" ]; then
     skip "fragmented funnel returned a clean 0% — the zero-guard has landed"
     note "that is the FIXED behaviour and a good outcome. To see the original,"

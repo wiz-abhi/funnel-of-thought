@@ -92,12 +92,26 @@ packages = ["fot", "agent", "signoz_funnel_mcp"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# blog/video/ is one-off tooling that produced the demo video, not shipped code.
+exclude = ["blog/video"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.per-file-ignores]
+# Typer's entire API is `def cmd(x: T = typer.Option(...))`. B008 cannot be
+# satisfied without giving up the framework.
+"fot/cli.py" = ["B008"]
+# RunMode subclasses str deliberately: its value travels through LangGraph state
+# and OTel span attributes, where it is compared against a plain string.
+"agent/graph.py" = ["UP042"]
+
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# The suites live next to the packages they cover. A bare `pytest` from the repo
+# root must find them -- pointing at a non-existent "tests" dir made pytest exit
+# 4 having collected nothing, which reads as "this project has no tests".
+testpaths = ["fot/tests", "signoz_funnel_mcp/tests"]
+# asyncio_mode needs pytest-asyncio; the dev extra declares it. Harmless if absent.
 asyncio_mode = "auto"
 # Integration tests hit a live SigNoz; unit tests never touch the network.
 markers = [

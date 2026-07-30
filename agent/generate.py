@@ -5,9 +5,9 @@ Runs N independent agent traces against a local SigNoz collector.
     # offline smoke test, no LLM calls, compressed latencies
     python -m agent.generate --runs 10 --stub --fast --console
 
-    # the demo dataset: every trace HAS a validate span, only ~62% are ordered
-    # correctly -- a naive span counter says 100%, the funnel says 62%
-    python -m agent.generate --runs 150 --stub
+    # the demo dataset: every trace HAS a validate span, only 64% are ordered
+    # correctly -- a naive span counter says 100%, the funnel says 64%
+    python -m agent.generate --runs 125 --validate-rate 0.64 --stub
 
     # the teaching demo: same steps, different model => LLM span name changes
     python -m agent.generate --runs 40 --stub --model gemini-3.1-flash
@@ -45,7 +45,8 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=None,
         help="fraction of runs where validate runs in the CORRECT position, "
-        "after tool (default: $FOT_VALIDATE_RATE or 0.62)",
+        "after tool (default: $FOT_VALIDATE_RATE or 0.64). This is the injected "
+        "ground truth the funnel is supposed to recover.",
     )
     p.add_argument(
         "--out-of-order-rate",
@@ -94,12 +95,17 @@ def resolve_rates(
     ``validate_rate`` of them have it in the correct position.
     """
     if validate_rate is None:
-        validate_rate = float(os.environ.get("FOT_VALIDATE_RATE", "0.62"))
+        # 0.64 so a default run reproduces the exact number the README, blog and
+        # demo video quote: round(125 * 0.64) == 80 of 125 traces == 64.0%.
+        validate_rate = float(os.environ.get("FOT_VALIDATE_RATE", "0.64"))
     if out_of_order_rate is None:
         env_ooo = os.environ.get("FOT_OUT_OF_ORDER_RATE")
         out_of_order_rate = float(env_ooo) if env_ooo is not None else 1.0 - validate_rate
 
-    for label, value in (("--validate-rate", validate_rate), ("--out-of-order-rate", out_of_order_rate)):
+    for label, value in (
+        ("--validate-rate", validate_rate),
+        ("--out-of-order-rate", out_of_order_rate),
+    ):
         if not 0.0 <= value <= 1.0:
             raise SystemExit(f"{label} must be between 0 and 1, got {value}")
     if validate_rate + out_of_order_rate > 1.0 + 1e-9:
@@ -118,7 +124,7 @@ def plan_schedule(
     We allocate exact counts and shuffle, rather than flipping an independent
     coin per run. That makes the funnel's conversion rate land on the intended
     number instead of wobbling with sample noise -- important when the whole
-    story is "validate converts at 62%".
+    story is "validate converts at 64%".
     """
     n_healthy = round(runs * validate_rate)
     n_ooo = round(runs * out_of_order_rate)

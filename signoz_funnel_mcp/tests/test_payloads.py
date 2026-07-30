@@ -11,9 +11,9 @@ import math
 import pytest
 
 from signoz_funnel_mcp.client import (
-    FunnelStep,
     NAN_BUG_NOTE,
     P50_WARNING,
+    FunnelStep,
     SigNozFunnelClient,
     build_create_payload,
     build_step_payload,

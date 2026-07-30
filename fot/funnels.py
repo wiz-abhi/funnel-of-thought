@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import yaml
 
@@ -31,8 +32,17 @@ def _expand_env(value: str) -> str:
 
     Lets one checked-in funnel file target a local stack, CI, and prod without
     forking the file -- e.g. ``service: ${FOT_SERVICE:-fot-agent}``.
+
+    Follows shell ``:-`` semantics: the default applies when the variable is
+    unset *or empty*. Taking `os.environ.get(name, default)` instead would let
+    an exported-but-empty ``FOT_SERVICE=`` expand to ``""``, which silently
+    matches no spans and reports a confident 0% conversion.
     """
-    return _ENV_PATTERN.sub(lambda m: os.environ.get(m.group(1), m.group(2) or ""), value)
+
+    def _sub(m: re.Match[str]) -> str:
+        return os.environ.get(m.group(1)) or (m.group(2) or "")
+
+    return _ENV_PATTERN.sub(_sub, value)
 
 
 def _walk_expand(node: Any) -> Any:
@@ -68,6 +78,16 @@ class Step:
     latency_type: str = "p95"
 
     def __post_init__(self) -> None:
+        # An empty service or span matches nothing, and the funnel then reports a
+        # confident 0% instead of an error. Usually the cause is a ${VAR} with no
+        # default and nothing exported, so name the offender.
+        for field_name in ("service", "span", "label"):
+            if not str(getattr(self, field_name) or "").strip():
+                raise ValueError(
+                    f"step {self.label or '(unlabelled)'!r}: {field_name} is empty -- "
+                    "check for a ${VAR} in the funnel YAML with no default and no "
+                    "value in the environment"
+                )
         if self.latency_type not in ("p90", "p95"):
             raise ValueError(
                 f"latency_type {self.latency_type!r} unsupported; use p90 or p95 "
