@@ -63,7 +63,7 @@ down anywhere. Building this surfaced six of them — the [blog](https://medium.
 
 - **Steps match on the *exact* span name** — no wildcards. The name you pick is load-bearing.
 - **OTel's GenAI convention puts the model inside the span name** (`chat gemini-3.1-flash-lite`), so one logical step fragments across N names on any model swap, and the funnel silently reads 0%. Two correct specs, quietly incompatible.
-- **A zero-match step returns `HTTP 500: unsupported value: NaN`**, not 0% — one function away from a guard that already exists. Filed as [#12143](https://github.com/SigNoz/signoz/issues/12143).
+- **A zero-match step returns `HTTP 500: unsupported value: NaN`** from the *overview* endpoints, while `/analytics/steps` returns a clean 0 — so through the endpoint the charts use, a broken funnel is indistinguishable from an honest 0%. The NaN comes from aggregates over an empty set (`avgIf`/`quantileIf`), not from the conversion division, which is already guarded. Filed as [#12143](https://github.com/SigNoz/signoz/issues/12143).
 - **`latency_type: "p50"` silently returns p99** (measured: p50 = p99 = `18.67`, p90 = `17.96`). Filed as [#12220](https://github.com/SigNoz/signoz/issues/12220) with [PR #12221](https://github.com/SigNoz/signoz/pull/12221).
 - **Funnels need strictly increasing timestamps** — steps inside one clock tick collapse to ~0 and 500. The single most useful undocumented thing we learned.
 - **0 of SigNoz's 41 MCP tools touch funnels** — so `signoz-funnel-mcp` ships the five that do.
