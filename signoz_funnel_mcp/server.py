@@ -27,9 +27,12 @@ should not land in a process list):
 
 from __future__ import annotations
 
+import functools
 import os
+from collections.abc import Callable
 from typing import Any
 
+import anyio
 from mcp.server.fastmcp import FastMCP
 
 try:  # package import (python -m signoz_funnel_mcp.server)
@@ -58,6 +61,30 @@ def _client() -> SigNozFunnelClient:
     return SigNozFunnelClient(timeout=float(os.environ.get("SIGNOZ_TIMEOUT", "30")))
 
 
+def offloaded(fn: Callable[..., Any]) -> Callable[..., Any]:
+    """Expose a blocking tool function as an async MCP tool.
+
+    FastMCP calls a plain ``def`` tool directly on the event loop -- there is no
+    implicit thread offload. Every tool here then makes blocking ``httpx`` calls
+    with a 30s default timeout, and ``get_funnel_analytics`` makes three
+    sequentially, so an unreachable SigNoz froze the entire server for up to 90s.
+    Measured: a ``ping`` sent 0.4s into a 6s call was not answered until +6.29s.
+
+    While the loop is blocked the server cannot read stdin, answer ``ping``, or
+    honour ``notifications/cancelled``, and MCP clients conclude it has hung and
+    kill it. Running the blocking work in a worker thread keeps the loop free.
+
+    ``functools.wraps`` sets ``__wrapped__``, so ``inspect.signature`` still sees
+    the original parameters and FastMCP derives the same input schema.
+    """
+
+    @functools.wraps(fn)
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        return await anyio.to_thread.run_sync(functools.partial(fn, *args, **kwargs))
+
+    return wrapper
+
+
 def _error(exc: Exception) -> dict[str, Any]:
     """Render an exception as a structured tool result.
 
@@ -77,6 +104,7 @@ def _error(exc: Exception) -> dict[str, Any]:
 
 
 @mcp.tool()
+@offloaded
 def list_funnels() -> dict[str, Any]:
     """List every SigNoz trace funnel, with its id, name, and step definitions.
 
@@ -113,6 +141,7 @@ def list_funnels() -> dict[str, Any]:
 
 
 @mcp.tool()
+@offloaded
 def create_funnel(name: str, steps: list[dict[str, Any]]) -> dict[str, Any]:
     """Create a SigNoz trace funnel and set its steps in a single call.
 
@@ -160,6 +189,7 @@ def create_funnel(name: str, steps: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 @mcp.tool()
+@offloaded
 def get_funnel_analytics(
     funnel_id: str | None = None,
     funnel_name: str | None = None,
@@ -213,6 +243,7 @@ def get_funnel_analytics(
 
 
 @mcp.tool()
+@offloaded
 def get_funnel_slow_traces(
     funnel_id: str | None = None,
     funnel_name: str | None = None,
@@ -270,6 +301,7 @@ def get_funnel_slow_traces(
 
 
 @mcp.tool()
+@offloaded
 def delete_funnel(funnel_id: str) -> dict[str, Any]:
     """Permanently delete a trace funnel by id.
 

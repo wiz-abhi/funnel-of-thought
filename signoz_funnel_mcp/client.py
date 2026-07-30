@@ -68,6 +68,7 @@ import math
 import os
 import re
 import time
+import uuid
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -387,9 +388,13 @@ def build_steps_update_payload(
     return {
         "funnel_id": funnel_id,
         "timestamp": _validate_ms(now_ms() if timestamp_ms is None else timestamp_ms),
+        # Positional, always. Honouring a caller-supplied step.step_order broke
+        # the docstring's promise two ways: an LLM passing step_order=5 for the
+        # first of three steps produced [5, 2, 3], and `or` treated an explicit
+        # step_order=0 as unset. SigNoz reads counts positionally as s1..sN, so a
+        # gap yields analytics that do not line up with the funnel.
         "steps": [
-            build_step_payload(step, step.step_order or index)
-            for index, step in enumerate(steps, start=1)
+            build_step_payload(step, index) for index, step in enumerate(steps, start=1)
         ],
     }
 
@@ -500,10 +505,17 @@ class SigNozFunnelClient:
         self._http = httpx.Client(timeout=timeout, headers=self._auth_headers())
 
     def _auth_headers(self) -> dict[str, str]:
+        """Exactly one credential, API key first.
+
+        Sending both at once (docker-compose sets both env vars) means a stale
+        SIGNOZ_JWT alongside a good SIGNOZ_API_KEY produces a 401 whose cause is
+        impossible to read off the response. `elif` makes the precedence explicit
+        and matches fot/signoz.py.
+        """
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         if self._api_key:
             headers["SIGNOZ-API-KEY"] = self._api_key
-        if self._jwt:
+        elif self._jwt:
             headers["Authorization"] = f"Bearer {self._jwt}"
         return headers
 
@@ -547,12 +559,27 @@ class SigNozFunnelClient:
         try:
             payload = response.json()
         except ValueError:
-            return response.text
+            # A wrong SIGNOZ_URL points at the SigNoz *UI*, whose SPA answers
+            # any unknown path with index.html and HTTP 200. Returning that text
+            # let a `str` flow into callers that expect dicts, so the agent got
+            # `AttributeError: 'str' object has no attribute 'get'` instead of
+            # being told its URL was wrong.
+            ctype = response.headers.get("content-type", "unknown")
+            raise SigNozError(
+                f"{url} returned HTTP 200 but not JSON (content-type: {ctype}). "
+                f"SIGNOZ_URL probably points at the SigNoz UI rather than its "
+                f"API, or the path does not exist on this version.",
+                status_code=response.status_code,
+                body=response.text[:500],
+            ) from None
         return payload.get("data") if isinstance(payload, dict) and "data" in payload else payload
 
     @staticmethod
     def _raise_for_error(response: httpx.Response, url: str) -> None:
-        body = response.text or ""
+        # Truncated: every byte here ends up in the tool result and therefore in
+        # the agent's context. A reverse proxy in front of SigNoz can answer with
+        # a multi-kilobyte HTML error page.
+        body = (response.text or "")[:500]
         status = response.status_code
 
         # SigNoz #12143: the body here is PLAIN TEXT, not JSON, e.g.
@@ -603,7 +630,12 @@ class SigNozFunnelClient:
         if not data:
             return []
         if isinstance(data, dict):
-            return [data]
+            # _clean_floats here too, not just on the list branch below. httpx's
+            # .json() happily parses non-standard NaN/Infinity into Python
+            # floats, and json.dumps then writes them back out as bare NaN --
+            # which is not valid JSON and corrupts the JSON-RPC stream. This
+            # project's own headline bug is a NaN, so this path is reachable.
+            return [_clean_floats(data)]
         rows = []
         for item in data:
             if isinstance(item, dict):
@@ -619,9 +651,28 @@ class SigNozFunnelClient:
         """``GET /list`` -- every funnel visible to this identity."""
         return self._request("GET", f"{FUNNELS_PREFIX}/list") or []
 
+    @staticmethod
+    def _safe_id(funnel_id: str) -> str:
+        """Validate a funnel id before it is interpolated into a URL path.
+
+        ``funnel_id`` arrives from the LLM. httpx applies RFC 3986 dot-segment
+        removal, so an id of ``../dashboards/<uuid>`` turns
+        ``/api/v1/trace-funnels/<id>`` into ``/api/v1/dashboards/<uuid>`` -- and
+        ``delete_funnel`` is documented as irreversible and requires an
+        editor/admin token. A hallucinated or injected id could therefore destroy
+        a dashboard or an alert rule. SigNoz ids are UUIDs, so require one.
+        """
+        try:
+            return str(uuid.UUID(str(funnel_id).strip()))
+        except (ValueError, AttributeError, TypeError):
+            raise SigNozError(
+                f"{funnel_id!r} is not a valid funnel id (expected a UUID). "
+                f"Use list_funnels to look one up, or pass funnel_name instead."
+            ) from None
+
     def get_funnel(self, funnel_id: str) -> dict[str, Any]:
         """``GET /{funnel_id}`` -- full funnel definition including its steps."""
-        return self._request("GET", f"{FUNNELS_PREFIX}/{funnel_id}") or {}
+        return self._request("GET", f"{FUNNELS_PREFIX}/{self._safe_id(funnel_id)}") or {}
 
     def find_funnel_by_name(self, name: str) -> dict[str, Any] | None:
         """Case-insensitive lookup by ``funnel_name``; ``None`` if absent."""
@@ -713,7 +764,7 @@ class SigNozFunnelClient:
 
     def delete_funnel(self, funnel_id: str) -> None:
         """``DELETE /{funnel_id}`` -- permanently remove a funnel."""
-        self._request("DELETE", f"{FUNNELS_PREFIX}/{funnel_id}")
+        self._request("DELETE", f"{FUNNELS_PREFIX}/{self._safe_id(funnel_id)}")
 
     # -- analytics ---------------------------------------------------------- #
     def _analytics(
@@ -726,7 +777,11 @@ class SigNozFunnelClient:
     ) -> Any:
         """POST to an ``/analytics/*`` endpoint with nanosecond bounds."""
         body: dict[str, Any] = {"start_time": start_ns, "end_time": end_ns, **extra}
-        return self._request("POST", f"{FUNNELS_PREFIX}/{funnel_id}/analytics/{endpoint}", body)
+        return self._request(
+            "POST",
+            f"{FUNNELS_PREFIX}/{self._safe_id(funnel_id)}/analytics/{endpoint}",
+            body,
+        )
 
     def validate_funnel(self, funnel_id: str, start_ns: int, end_ns: int) -> list[dict[str, Any]]:
         """``/analytics/validate`` -- sample trace ids that match the funnel.
@@ -889,7 +944,14 @@ class SigNozFunnelClient:
         start_ns, end_ns = resolve_window_ns(time_range, start, end)
 
         definition = self.get_funnel(resolved_id)
-        raw_steps = definition.get("steps") or []
+        # Sort by step_order. Labels are read in list order here while the counts
+        # below are read POSITIONALLY as total_s1..total_sN, so if SigNoz ever
+        # returns the definition unordered, every label lands on the wrong step's
+        # number -- a silently wrong conversion report rather than an error.
+        raw_steps = sorted(
+            definition.get("steps") or [],
+            key=lambda s: s.get("step_order") or 0,
+        )
         labels = [
             step.get("name") or f"{step.get('service_name')}:{step.get('span_name')}"
             for step in raw_steps
