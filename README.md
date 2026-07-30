@@ -2,6 +2,11 @@
 
 # Funnel of Thought
 
+[![ci](https://github.com/wiz-abhi/funnel-of-thought/actions/workflows/ci.yml/badge.svg)](https://github.com/wiz-abhi/funnel-of-thought/actions/workflows/ci.yml)
+[![tests](https://img.shields.io/badge/tests-109-brightgreen)](fot/tests)
+[![SigNoz](https://img.shields.io/badge/SigNoz-v0.132.2-orange)](casting.yaml)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 **An AI agent that watches itself think — and tells you the exact step where it stopped.**
 
 **▶ [Watch the 3-min demo](https://youtu.be/N9_sCORyT2E)** · **[Try it live](https://wiz-abhi-funnel-of-thought.static.hf.space)** · [Read the blog](https://medium.com/@abhiiishek0101/i-gave-my-ai-agent-a-funnel-over-its-own-reasoning-it-told-me-exactly-where-it-stops-thinking-b4e0d1cb53d1)
@@ -192,7 +197,7 @@ docker-compose.yml    OUR containers, joined to signoz-network
 PREDICTION.md         pre-registered hypotheses, committed before data
 ```
 
-**102 unit tests**, none of which need SigNoz, Docker, or an API key:
+**109 unit tests**, none of which need SigNoz, Docker, or an API key:
 `pytest -q`. CI runs them plus `ruff` on Linux and Windows, and asserts that the
 `--json` contract `scripts/reproduce.sh` parses still exists — the wiring bug
 that class of test is there to prevent.
