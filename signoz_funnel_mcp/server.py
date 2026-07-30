@@ -68,7 +68,13 @@ def offloaded(fn: Callable[..., Any]) -> Callable[..., Any]:
     implicit thread offload. Every tool here then makes blocking ``httpx`` calls
     with a 30s default timeout, and ``get_funnel_analytics`` makes three
     sequentially, so an unreachable SigNoz froze the entire server for up to 90s.
-    Measured: a ``ping`` sent 0.4s into a 6s call was not answered until +6.29s.
+
+    Measured against a local server that sleeps before responding, sending a
+    ``ping`` 0.40s into the tool call:
+
+        plain ``def``  (6s call): ping answered at +6.06s -- the request was not
+                                  even read until the call returned
+        ``@offloaded`` (4s call): ping answered at +0.50s, i.e. immediately
 
     While the loop is blocked the server cannot read stdin, answer ``ping``, or
     honour ``notifications/cancelled``, and MCP clients conclude it has hung and

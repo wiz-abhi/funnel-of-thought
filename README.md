@@ -66,7 +66,7 @@ down anywhere. Building this surfaced six of them — the [blog](https://medium.
 - **A zero-match step returns `HTTP 500: unsupported value: NaN`** from the *overview* endpoints, while `/analytics/steps` returns a clean 0 — so through the endpoint the charts use, a broken funnel is indistinguishable from an honest 0%. The NaN comes from aggregates over an empty set (`avgIf`/`quantileIf`), not from the conversion division, which is already guarded. Filed as [#12143](https://github.com/SigNoz/signoz/issues/12143).
 - **`latency_type: "p50"` silently returns p99** (measured: p50 = p99 = `18.67`, p90 = `17.96`). Filed as [#12220](https://github.com/SigNoz/signoz/issues/12220) with [PR #12221](https://github.com/SigNoz/signoz/pull/12221).
 - **Funnels need strictly increasing timestamps** — steps inside one clock tick collapse to ~0 and 500. The single most useful undocumented thing we learned.
-- **0 of SigNoz's 41 MCP tools touch funnels** — so `signoz-funnel-mcp` ships the five that do.
+- **0 of SigNoz's 41 MCP tools touch funnels** — so `signoz-funnel-mcp` ships the five that do. Verify it yourself against the live server rather than taking my word: `python scripts/mcp_gap.py --list`, also asserted as step 5 of `reproduce.sh`.
 
 **The boundary that isn't a bug:** funnels are `minIf` + monotonic — they see
 *first occurrence* and enforce *order*, so they're blind to loops and retries.
@@ -119,15 +119,18 @@ fot counter-proof                     # naive counter beside the ordered funnel
 ```
 
 > No `foundryctl`? `docker compose -f pours/deployment/compose.yaml up -d` (the committed forge output).
-> Funnel *writes* need an editor JWT, not an API key — `scripts/setup.sh --token` mints one into `.env` (re-run on a 401).
+> Funnel *writes* need an editor JWT, not an API key — `scripts/setup.sh --token` mints one into `.env` (re-run on a 401; access tokens expire in ~30 min).
+> `foundryctl cast` runs `forge` first, which rewrites `pours/`. Verified on foundryctl **v0.2.11**: the regenerated output is byte-identical to what is committed here, so `cast` leaves a clean git tree. If you already have SigNoz containers from another project, `cast` will stop on a name conflict — remove the stale container it names and re-run.
 
-**The judge path — reproduce the whole finding in ≤10 min:**
+**The judge path — five assertions, ~2 minutes:**
 
 ```bash
 ./scripts/reproduce.sh
 ```
 
-Generates a two-model batch, builds the funnels, prints the working cliff, reports the missing-vs-misordered split, then points the fragmented funnel at a bumped model version and shows the `500: unsupported value: NaN` verbatim. It maintains a failure counter and exits non-zero if any assertion it makes fails to reproduce.
+Measured end to end at **1m43s** on a laptop. It generates a two-model batch, builds the funnels, prints the working cliff, reports the missing-vs-misordered split, points the fragmented funnel at a bumped model version and shows the `500: unsupported value: NaN` verbatim, then measures SigNoz's own MCP server and confirms **41 tools, 0 reaching funnels**. It maintains a failure counter and exits non-zero if any assertion fails.
+
+It generates with `--stub` by default even when a Gemini key is present — free-tier pacing is 12 RPM across 3 calls per run, so 60 traces live is ~15 minutes. Every assertion is about span *order* and span *names*; none reads a model's output, so the results are identical. `--live` opts into real model latencies in the waterfall and costs the extra ~14 min. `--no-gen` reuses traces already in SigNoz (~20s).
 
 **What it does and doesn't prove.** The drop-off rate is *injected*, not discovered: `--validate-rate 0.64` decides how many runs honour the contract, and the funnel's job is to recover 64% from the traces alone while a presence counter insists on 100%. That makes this a **calibration harness**, and the known injection rate is exactly what makes the counter's answer demonstrably wrong rather than merely suspect. What is *not* authored is the span-name fragmentation: stock OpenTelemetry named those spans and an ordinary version bump did the rest.
 

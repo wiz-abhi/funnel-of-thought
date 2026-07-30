@@ -2,8 +2,11 @@
 # =============================================================================
 # Funnel of Thought — reproduce the finding in <= 10 minutes.
 #
-#   ./scripts/reproduce.sh            full path, generates fresh traces
-#   ./scripts/reproduce.sh --no-gen   reuse traces already in SigNoz (fast)
+#   ./scripts/reproduce.sh            full path, generates fresh traces (~3 min)
+#   ./scripts/reproduce.sh --no-gen   reuse traces already in SigNoz (~20s)
+#   ./scripts/reproduce.sh --live     generate with real Gemini instead of the
+#                                     stub. Correct but SLOW: free-tier pacing
+#                                     makes this ~15 min, not 3.
 #
 # This is the judge path. It ASSERTS the claims the README makes and exits
 # non-zero if any of them fail to reproduce, so a green run means the write-up
@@ -35,6 +38,11 @@
 #      Both halves matter: the partial read is the silent failure you would
 #      ship; the 500 is the loud one that tells you something is wrong.
 #
+#   4. SigNoz's own MCP server exposes 41 tools and NONE of them reach trace
+#      funnels -- measured live against the signoz-mcp container that
+#      casting.yaml provisions, not asserted. That is the gap this project's
+#      five funnel tools fill.
+#
 # Requires SigNoz v0.132.2 for the 500 in assertion 3. casting.yaml pins it.
 # If a zero-guard has landed in the build under test, newer versions return a
 # clean 0% and step 3 reports SKIPPED rather than failing — that is the correct
@@ -65,7 +73,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 BOLD=$'\033[1m'; RED=$'\033[31m'; GREEN=$'\033[32m'; YEL=$'\033[33m'; DIM=$'\033[2m'; OFF=$'\033[0m'
-step()  { printf '\n%s\n' "${BOLD}[$1/4] $2${OFF}"; }
+step()  { printf '\n%s\n' "${BOLD}[$1/5] $2${OFF}"; }
 pass()  { printf '%s\n' "  ${GREEN}PASS${OFF}  $*"; }
 fail()  { printf '%s\n' "  ${RED}FAIL${OFF}  $*"; FAILURES=$((FAILURES+1)); }
 skip()  { printf '%s\n' "  ${YEL}SKIP${OFF}  $*"; }
@@ -73,7 +81,16 @@ note()  { printf '%s\n' "        ${DIM}$*${OFF}"; }
 
 FAILURES=0
 DO_GEN=1
-[ "${1:-}" = "--no-gen" ] && DO_GEN=0
+DO_LIVE=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --no-gen) DO_GEN=0 ;;
+    --live)   DO_LIVE=1 ;;
+    -h|--help) sed -n '2,62p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) printf 'unknown flag: %s (try --help)\n' "$1" >&2; exit 2 ;;
+  esac
+  shift
+done
 
 set -a; . ./.env 2>/dev/null || true; set +a
 SIGNOZ_URL="${SIGNOZ_URL:-http://localhost:8080}"
@@ -125,12 +142,25 @@ if [ "$CODE" = "200" ]; then pass "editor JWT valid"
 else fail "JWT returned HTTP $CODE — run ./scripts/setup.sh --token"; exit 1; fi
 
 if [ "$DO_GEN" -eq 1 ]; then
-  STUB=""
-  if [ -z "${GEMINI_API_KEY:-}" ]; then
-    STUB="--stub"
-    note "no GEMINI_API_KEY — generating with --stub (no LLM calls, same spans)"
+  # --stub by DEFAULT, even when a key is available. Free-tier pacing is 12 RPM
+  # across 3 LLM calls per run = 15s/run, so 60 traces is 15 MINUTES -- which
+  # blows the 10-minute budget this script advertises. Measured, not guessed:
+  # that is exactly how a full live run overran.
+  #
+  # Nothing is lost. Every assertion below is about span ORDER and span NAMES;
+  # none reads a model's output. --stub emits an identical span shape with no
+  # network. --live opts into real model latencies in the trace waterfall.
+  STUB="--stub"
+  if [ "$DO_LIVE" -eq 1 ]; then
+    if [ -z "${GEMINI_API_KEY:-}" ]; then
+      fail "--live needs GEMINI_API_KEY (set it in .env), or drop --live"
+      exit 1
+    fi
+    STUB=""
+    note "--live: real Gemini at 12 RPM x 3 calls/run -> expect ~15 min"
   else
-    note "live Gemini, ~5 min on the free tier"
+    note "generating with --stub: identical spans, zero LLM calls, ~90s"
+    note "(--live uses real Gemini instead; adds roughly 14 minutes)"
   fi
   # Two models on purpose: the GenAI convention puts the model inside the span
   # name, so a funnel keyed on `chat <model>` sees only that model's share.
@@ -261,6 +291,33 @@ else
     fail "unexpected response from the fragmented funnel: status=$STATUS error=$ERRTXT"
     note "a non-trivial NON-ZERO conversion here would falsify the whole thesis"
     note "(see PREDICTION.md, prediction 3) — matching would not be exact-equality."
+  fi
+fi
+
+# -----------------------------------------------------------------------------
+step 4 "The gap — SigNoz's own MCP server, measured"
+# -----------------------------------------------------------------------------
+# The novelty claim, as a check rather than a sentence you have to trust.
+# casting.yaml provisions signoz-mcp, so casting the stack gives you the thing
+# being measured. A missing MCP container is a SKIP: it means we could not take
+# the measurement, not that the claim failed.
+GAP="$("$PY" scripts/mcp_gap.py --json 2>/dev/null)"
+if [ -z "$GAP" ]; then
+  skip "SigNoz MCP server not reachable on :8000 — claim not measured here"
+  note "it ships in casting.yaml; 'foundryctl cast' brings it up"
+else
+  TOTAL_T="$(printf '%s' "$GAP" | jget tool_count)"
+  FUNNEL_T="$(printf '%s' "$GAP" | jget funnel_tool_count)"
+  if [ "$FUNNEL_T" = "0" ] && [ "${TOTAL_T:-0}" -gt 0 ]; then
+    pass "SigNoz's MCP server exposes ${TOTAL_T} tools, ${FUNNEL_T} of which reach funnels"
+    note "so an agent can read every SigNoz surface EXCEPT the one measuring its"
+    note "own completion rate. That is the gap signoz-funnel-mcp fills, with five"
+    note "tools: create_funnel, get_funnel_analytics, get_funnel_slow_traces,"
+    note "list_funnels, delete_funnel. Full list: python scripts/mcp_gap.py --list"
+  else
+    fail "expected 0 funnel tools out of ${TOTAL_T}, found ${FUNNEL_T}"
+    note "if SigNoz has since shipped funnel tools, that is good news upstream"
+    note "and this project's MCP contribution is superseded. Say so, do not hide it."
   fi
 fi
 
